@@ -1,0 +1,8 @@
+streamlit
+anthropic
+langchain
+langchain-anthropic
+langchain-community
+langchain-text-splitters
+pypdf
+python-dotenv
