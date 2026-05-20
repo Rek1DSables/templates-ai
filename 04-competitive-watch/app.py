@@ -34,23 +34,32 @@ if submitted and client and secteur and concurrents:
         st.warning("⚠️ Ajoutez au moins un concurrent.")
     else:
         with st.spinner(f"Analyse de {len(liste_concurrents)} concurrent(s)... 60 à 90 secondes."):
-            crew   = build_crew(
-                liste_concurrents,
-                secteur,
-                client,
-                RAPPORT_LENGTHS[length_label]
-            )
-            result = crew.kickoff()
+            try:
+                crew   = build_crew(
+                    liste_concurrents,
+                    secteur,
+                    client,
+                    RAPPORT_LENGTHS[length_label]
+                )
+                result = crew.kickoff()
 
-        rapport = result.raw if hasattr(result, "raw") else str(result)
+                rapport = result.raw if hasattr(result, "raw") else str(result)
 
-        st.markdown("---")
-        st.markdown("### 📊 Rapport de veille")
-        st.markdown(rapport)
+                st.markdown("---")
+                st.markdown("### 📊 Rapport de veille")
+                st.markdown(rapport)
 
-        st.download_button(
-            label="⬇️ Télécharger le rapport",
-            data=rapport,
-            file_name="rapport_veille_concurrentielle.txt",
-            mime="text/plain"
-        )
+                st.download_button(
+                    label="⬇️ Télécharger le rapport",
+                    data=rapport,
+                    file_name="rapport_veille_concurrentielle.txt",
+                    mime="text/plain"
+                )
+
+            except Exception as e:
+                if "overloaded" in str(e).lower():
+                    st.error("⚠️ Le service est temporairement surchargé. Réessayez dans quelques secondes.")
+                elif "api_key" in str(e).lower():
+                    st.error("🔑 Clé API invalide. Vérifiez votre fichier .env.")
+                else:
+                    st.error("❌ Une erreur est survenue. Réessayez ou contactez le support.")

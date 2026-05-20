@@ -48,13 +48,23 @@ if question:
         st.write(question)
 
     with st.chat_message("assistant"):
-        with st.spinner("Recherche en cours..."):
-            result = pipeline.invoke({
-                "question": question,
-                "context": "",
-                "answer": ""
-            })
-            answer = result.get("answer", NO_ANSWER_MSG)
-        st.write(answer)
+        try:
+            with st.spinner("Recherche en cours..."):
+                result = pipeline.invoke({
+                    "question": question,
+                    "context": "",
+                    "answer": ""
+                })
+                answer = result.get("answer", NO_ANSWER_MSG)
+            st.write(answer)
+
+        except Exception as e:
+            if "overloaded" in str(e).lower():
+                answer = "⚠️ Le service est temporairement surchargé. Réessayez dans quelques secondes."
+            elif "api_key" in str(e).lower():
+                answer = "🔑 Clé API invalide. Vérifiez votre fichier .env."
+            else:
+                answer = "❌ Une erreur est survenue. Réessayez ou contactez le support."
+            st.write(answer)
 
     st.session_state.messages.append({"role": "assistant", "content": answer})

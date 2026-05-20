@@ -49,41 +49,48 @@ with st.form("lead_form"):
 
 if submitted and nom and message:
     with st.spinner("Analyse en cours..."):
-        result = pipeline.invoke({
-            "lead": {"nom": nom, "entreprise": entreprise,
-                     "email": email, "message": message},
-            "score": 0,
-            "category": "",
-            "email_content": ""
-        })
+        try:
+            result = pipeline.invoke({
+                "lead": {"nom": nom, "entreprise": entreprise,
+                         "email": email, "message": message},
+                "score": 0,
+                "category": "",
+                "email_content": ""
+            })
 
-    score         = result["score"]
-    category      = result["category"]
-    email_content = result["email_content"]
+            score         = result["score"]
+            category      = result["category"]
+            email_content = result["email_content"]
 
-    # ── Affichage résultats ────────────────────────────────
-    labels = {"chaud": LABEL_CHAUD, "tiede": LABEL_TIEDE, "froid": LABEL_FROID}
+            labels = {"chaud": LABEL_CHAUD, "tiede": LABEL_TIEDE, "froid": LABEL_FROID}
 
-    col1, col2 = st.columns(2)
-    with col1:
-        st.metric("Score", f"{score}/10")
-    with col2:
-        st.metric("Catégorie", labels.get(category, category))
+            col1, col2 = st.columns(2)
+            with col1:
+                st.metric("Score", f"{score}/10")
+            with col2:
+                st.metric("Catégorie", labels.get(category, category))
 
-    st.markdown("### Email suggéré")
-    st.text_area("Réponse suggérée", email_content, height=200)
+            st.markdown("### Email suggéré")
+            st.text_area("Réponse suggérée", email_content, height=200)
 
-    # ── Sauvegarde Supabase ────────────────────────────────
-    if supabase:
-        supabase.table("leads").insert({
-            "nom": nom, "entreprise": entreprise,
-            "email": email, "message": message,
-            "score": score, "category": category,
-            "email_content": email_content
-        }).execute()
-        st.success("✅ Lead sauvegardé dans la base de données")
-    else:
-        st.info("ℹ️ Supabase non configuré — lead non sauvegardé")
+            if supabase:
+                supabase.table("leads").insert({
+                    "nom": nom, "entreprise": entreprise,
+                    "email": email, "message": message,
+                    "score": score, "category": category,
+                    "email_content": email_content
+                }).execute()
+                st.success("✅ Lead sauvegardé dans la base de données")
+            else:
+                st.info("ℹ️ Supabase non configuré — lead non sauvegardé")
+
+        except Exception as e:
+            if "overloaded" in str(e).lower():
+                st.error("⚠️ Le service est temporairement surchargé. Réessayez dans quelques secondes.")
+            elif "api_key" in str(e).lower():
+                st.error("🔑 Clé API invalide. Vérifiez votre fichier .env.")
+            else:
+                st.error("❌ Une erreur est survenue. Réessayez ou contactez le support.")
 
 # ── Historique ─────────────────────────────────────────────
 st.markdown("---")

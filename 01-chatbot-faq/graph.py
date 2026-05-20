@@ -12,6 +12,7 @@ from langgraph.graph import StateGraph, START, END
 from typing import TypedDict
 from config import MODEL, TOP_K, CHUNK_SIZE, CHUNK_OVERLAP, NO_ANSWER_MSG, EMBEDDING_MODEL
 import os
+import time
 
 # ── State ──────────────────────────────────────────────────
 class ChatState(TypedDict):
@@ -25,6 +26,17 @@ def get_llm():
         model=MODEL,
         api_key=os.getenv("ANTHROPIC_API_KEY")
     )
+
+# ── Retry ──────────────────────────────────────────────────
+def invoke_with_retry(llm, prompt, retries=3, delay=5):
+    for attempt in range(retries):
+        try:
+            return llm.invoke(prompt)
+        except Exception as e:
+            if "overloaded" in str(e).lower() and attempt < retries - 1:
+                time.sleep(delay)
+            else:
+                raise e
 
 # ── Vectorstore ────────────────────────────────────────────
 def build_vectorstore(docs_folder: str):
@@ -41,9 +53,7 @@ def build_vectorstore(docs_folder: str):
     )
     chunks = splitter.split_documents(documents)
 
-    embeddings = HuggingFaceEmbeddings(
-    model_name=EMBEDDING_MODEL
-)
+    embeddings = HuggingFaceEmbeddings(model_name=EMBEDDING_MODEL)
     vectorstore = FAISS.from_documents(chunks, embeddings)
     return vectorstore
 
@@ -66,7 +76,7 @@ Contexte :
 Question : {state['question']}
 
 Réponse :"""
-    result = llm.invoke(prompt)
+    result = invoke_with_retry(llm, prompt)
     answer = result.content.strip() if result.content.strip() else NO_ANSWER_MSG
     return {"answer": answer}
 

@@ -33,18 +33,27 @@ if submitted and brief:
     length = LENGTHS[length_label]
 
     with st.spinner("Les agents travaillent... ça peut prendre 30 à 60 secondes."):
-        crew   = build_crew(brief, content_type, tone, language, length)
-        result = crew.kickoff()
+        try:
+            crew   = build_crew(brief, content_type, tone, language, length)
+            result = crew.kickoff()
 
-    st.markdown("---")
-    st.markdown("### 📄 Contenu généré")
-    st.markdown(result.raw if hasattr(result, "raw") else str(result))
+            content_str = result.raw if hasattr(result, "raw") else str(result)
 
-    # ── Bouton téléchargement ──────────────────────────────
-    content_str = result.raw if hasattr(result, "raw") else str(result)
-    st.download_button(
-        label="⬇️ Télécharger le contenu",
-        data=content_str,
-        file_name=f"{content_type.lower().replace(' ', '_')}.txt",
-        mime="text/plain"
-    )
+            st.markdown("---")
+            st.markdown("### 📄 Contenu généré")
+            st.markdown(content_str)
+
+            st.download_button(
+                label="⬇️ Télécharger le contenu",
+                data=content_str,
+                file_name=f"{content_type.lower().replace(' ', '_')}.txt",
+                mime="text/plain"
+            )
+
+        except Exception as e:
+            if "overloaded" in str(e).lower():
+                st.error("⚠️ Le service est temporairement surchargé. Réessayez dans quelques secondes.")
+            elif "api_key" in str(e).lower():
+                st.error("🔑 Clé API invalide. Vérifiez votre fichier .env.")
+            else:
+                st.error("❌ Une erreur est survenue. Réessayez ou contactez le support.")
