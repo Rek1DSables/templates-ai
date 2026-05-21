@@ -1,0 +1,9 @@
+anthropic
+langchain-anthropic
+langchain-core
+langgraph
+pandas
+openpyxl
+fpdf2
+streamlit
+python-dotenv
