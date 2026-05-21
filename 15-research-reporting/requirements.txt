@@ -1,0 +1,6 @@
+anthropic
+langchain-anthropic
+crewai
+crewai-tools
+streamlit
+python-dotenv
