@@ -1,0 +1,13 @@
+anthropic
+langchain-anthropic
+langchain-core
+langchain-community
+langchain-text-splitters
+langgraph
+faiss-cpu
+sentence-transformers
+pymupdf
+supabase
+requests
+streamlit
+python-dotenv
