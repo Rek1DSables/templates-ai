@@ -40,6 +40,8 @@ Chaque template est **autonome**, **configurable** et **deployable** sans modifi
 | 16 | [Analyse financiere](./16-analyse-financiere/) | LangGraph + Pandas + Streamlit | Calculer les ratios et generer une synthese d'investissement |
 | 17 | [Automatisation comptable](./17-automatisation-comptable/) | LangGraph + PyMuPDF + Supabase + Streamlit | Extraire et enregistrer automatiquement les donnees de factures |
 | 18 | [Monitoring & Alertes intelligentes](./18-monitoring-alertes/) | LangGraph + Gmail + Supabase + Streamlit | Detecter les anomalies et envoyer des alertes automatiques |
+| 19 | [RAG Multi-Sources](./19-rag-multi-sources/) | LangGraph + FAISS + Supabase + Streamlit | Interroger simultanement PDFs, Supabase et APIs externes |
+| 20 | [Formation & Quiz Adaptatif](./20-formation-quiz-adaptatif/) | LangGraph + Supabase + Streamlit | Generer des quiz adaptes au niveau et suivre la progression |
 
 ---
 
@@ -48,7 +50,7 @@ Chaque template est **autonome**, **configurable** et **deployable** sans modifi
 - **Orchestration** : LangGraph, CrewAI
 - **LLM** : Anthropic Claude (claude-haiku-4-5-20251001)
 - **Base de donnees** : Supabase (PostgreSQL)
-- **Recherche semantique** : FAISS, ChromaDB
+- **Recherche semantique** : FAISS, HuggingFace
 - **Scraping** : BeautifulSoup, Apify
 - **Interface** : Streamlit
 - **Email** : Gmail API OAuth2
