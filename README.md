@@ -42,6 +42,9 @@ Chaque template est **autonome**, **configurable** et **deployable** sans modifi
 | 18 | [Monitoring & Alertes intelligentes](./18-monitoring-alertes/) | LangGraph + Gmail + Supabase + Streamlit | Detecter les anomalies et envoyer des alertes automatiques |
 | 19 | [RAG Multi-Sources](./19-rag-multi-sources/) | LangGraph + FAISS + Supabase + Streamlit | Interroger simultanement PDFs, Supabase et APIs externes |
 | 20 | [Formation & Quiz Adaptatif](./20-formation-quiz-adaptatif/) | LangGraph + Supabase + Streamlit | Generer des quiz adaptes au niveau et suivre la progression |
+| 21 | [Générateur de newsletters](./21-generateur-newsletters/) | LangGraph + Gmail + Supabase + Streamlit | Rédiger et envoyer des newsletters personnalisées |
+| 22 | [Agent réseaux sociaux](./22-agent-reseaux-sociaux/) | LangGraph + Serper + Streamlit | Générer des posts et un planning hebdomadaire |
+| 23 | [Générateur de devis](./23-generateur-devis/) | LangGraph + FPDF2 + Supabase + Streamlit | Chiffrer un projet et générer un PDF professionnel |
 
 ---
 
