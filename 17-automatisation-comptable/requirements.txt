@@ -1,0 +1,8 @@
+anthropic
+langchain-anthropic
+langchain-core
+langgraph
+pymupdf
+supabase
+streamlit
+python-dotenv
