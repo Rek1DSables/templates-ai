@@ -45,6 +45,10 @@ Chaque template est **autonome**, **configurable** et **deployable** sans modifi
 | 21 | [Générateur de newsletters](./21-generateur-newsletters/) | LangGraph + Gmail + Supabase + Streamlit | Rédiger et envoyer des newsletters personnalisées |
 | 22 | [Agent réseaux sociaux](./22-agent-reseaux-sociaux/) | LangGraph + Serper + Streamlit | Générer des posts et un planning hebdomadaire |
 | 23 | [Générateur de devis](./23-generateur-devis/) | LangGraph + FPDF2 + Supabase + Streamlit | Chiffrer un projet et générer un PDF professionnel |
+| 24 | [Pipeline E-commerce](./24-pipeline-ecommerce/) | LangGraph + Supabase + Gmail + Streamlit | Gérer commandes, stock et alertes automatiques |
+| 25 | [Agent CRM](./25-agent-crm/) | LangGraph + Supabase + Streamlit | Pipeline commercial complet avec analyse IA |
+| 26 | [Dashboard Analytics](./26-dashboard-analytics/) | LangGraph + Pandas + Plotly + Streamlit | Analyser des données et générer des insights IA |
+| 27 | [Agent de Prédiction](./27-agent-prediction/) | LangGraph + NumPy + Plotly + Streamlit | Prédire des séries temporelles avec interprétation IA |
 
 ---
 
