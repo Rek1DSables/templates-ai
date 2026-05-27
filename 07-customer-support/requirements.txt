@@ -1,7 +1,0 @@
-streamlit
-anthropic
-langchain-anthropic
-langgraph
-python-dotenv
-supabase
-pandas
