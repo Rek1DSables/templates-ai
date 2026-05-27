@@ -50,9 +50,6 @@ def recherche_serper(query: str) -> str:
         headers = {"X-API-KEY": SERPER_API_KEY, "Content-Type": "application/json"}
         payload = {"q": query, "num": 5}
         response = requests.post(SERPER_URL, headers=headers, json=payload, timeout=10)
-        print(f"[DEBUG] Query: {query}")
-        print(f"[DEBUG] Status: {response.status_code}")
-        print(f"[DEBUG] Response: {response.text[:500]}")
         data = response.json()
         resultats = []
         for item in data.get("organic", [])[:5]:
@@ -146,39 +143,38 @@ Reponds uniquement avec le JSON."""
 def generer_rapport(state: VeilleState) -> VeilleState:
     try:
         system = """Tu es un consultant en veille strategique.
-Tu rediges des rapports concis, structures et actionnables en francais.
-Tu termines TOUJOURS toutes tes sections avant de t'arreter."""
+Tu rediges des rapports professionnels et actionnables en francais.
+Tu termines TOUJOURS la section 4 RECOMMANDATIONS avant de t'arreter."""
 
-        prompt = f"""Redige un rapport de veille strategique complet et professionnel pour :
+        prompt = f"""Redige un rapport de veille strategique complet pour :
 
-Entreprise : {state['entreprise']}
-Secteur : {state['secteur']}
-Type : {state['type_veille']}
-Niveau d'alerte : {state['niveau_alerte'].upper()}
+Entreprise : {state['entreprise']} | Secteur : {state['secteur']}
+Type : {state['type_veille']} | Alerte : {state['niveau_alerte'].upper()}
 
 Points cles :
 {chr(10).join(f'- {p}' for p in state['points_cles'])}
 
-Analyse :
-{state['analyse']}
+Analyse disponible :
+{state['analyse'][:800]}
 
 Recommandations :
-{state['recommandations']}
+{state['recommandations'][:400]}
 
 Structure en 4 sections detaillees :
-1. RESUME EXECUTIF : contexte, enjeux, conclusion principale
-2. SIGNAUX DETECTES : liste des signaux identifies avec niveau d'importance
-3. ANALYSE DETAILLEE : interpretation des signaux, impacts potentiels, tendances
-4. RECOMMANDATIONS PRIORITAIRES : actions concretes avec responsable et delai suggere
+1. RESUME EXECUTIF : 4-5 points cles avec contexte marche
+2. SIGNAUX DETECTES : 4-6 signaux avec niveau d importance et explication
+3. ANALYSE : 4-5 paragraphes d interpretation des signaux et impacts
+4. RECOMMANDATIONS PRIORITAIRES : 4-5 actions avec responsable, delai et objectif mesurable
 
-Chaque section doit etre substantielle. Termine toujours la section 4."""
+Chaque section doit etre substantielle et apporter de la valeur. Termine toujours la section 4."""
 
-        rapport = invoke_with_retry(
+        response = client.messages.create(
+            model="claude-sonnet-4-6",
+            max_tokens=8096,
             system=system,
             messages=[{"role": "user", "content": prompt}],
-            max_tokens=4096,
         )
-
+        rapport = response.content[0].text
         return {**state, "analyse": rapport, "erreur": ""}
     except Exception as e:
         return {**state, "erreur": f"Erreur rapport : {str(e)}"}
