@@ -1,0 +1,8 @@
+anthropic
+langgraph
+streamlit
+python-dotenv
+pandas
+numpy
+plotly
+yfinance
