@@ -56,7 +56,6 @@ def recherche_web(query: str) -> str:
         return f"Erreur recherche : {str(e)}"
 
 
-# --- ORCHESTRATEUR ---
 def orchestrer(state: OrchestratorState) -> OrchestratorState:
     try:
         system = """Tu es un orchestrateur d'agents AI. Tu recois une tache complexe et tu la decompose en sous-taches specialisees.
@@ -99,7 +98,6 @@ Maximum 4 sous-taches. Chaque instruction doit etre precise et actionnable."""
         return {**state, "erreur": f"Erreur orchestration : {str(e)}"}
 
 
-# --- AGENT RECHERCHE ---
 def agent_recherche(instruction: str) -> str:
     try:
         system = "Tu es un agent de recherche. Tu cherches des informations pertinentes sur le web et tu synthetises les resultats en francais."
@@ -117,7 +115,6 @@ def agent_recherche(instruction: str) -> str:
         return f"Erreur agent recherche : {str(e)}"
 
 
-# --- AGENT ANALYSE ---
 def agent_analyse(instruction: str, contexte: str) -> str:
     try:
         system = "Tu es un agent d'analyse expert. Tu analyses des informations et fournis des insights structures et actionnables en francais."
@@ -130,7 +127,6 @@ def agent_analyse(instruction: str, contexte: str) -> str:
         return f"Erreur agent analyse : {str(e)}"
 
 
-# --- AGENT REDACTION ---
 def agent_redaction(instruction: str, contexte: str) -> str:
     try:
         system = "Tu es un agent de redaction expert. Tu rediges du contenu professionnel, structure et clair en francais."
@@ -143,7 +139,6 @@ def agent_redaction(instruction: str, contexte: str) -> str:
         return f"Erreur agent redaction : {str(e)}"
 
 
-# --- AGENT SYNTHESE ---
 def agent_synthese(instruction: str, contexte: str) -> str:
     try:
         system = "Tu es un agent de synthese expert. Tu consolides et structures des informations complexes en un output clair et actionnable en francais."
@@ -156,7 +151,6 @@ def agent_synthese(instruction: str, contexte: str) -> str:
         return f"Erreur agent synthese : {str(e)}"
 
 
-# --- DISPATCHER ---
 def dispatcher(state: OrchestratorState) -> OrchestratorState:
     try:
         resultats = {}
@@ -190,41 +184,32 @@ def dispatcher(state: OrchestratorState) -> OrchestratorState:
         return {**state, "erreur": f"Erreur dispatcher : {str(e)}"}
 
 
-# --- AGREGATEUR ---
 def agregateur(state: OrchestratorState) -> OrchestratorState:
     try:
         contexte = f"Tache originale : {state['tache']}\n\n"
         for id_tache, data in state["resultats_agents"].items():
+            # Tronquer chaque resultat a 1000 caracteres pour eviter overflow
+            resultat_tronque = data['resultat'][:1000] + "..." if len(data['resultat']) > 1000 else data['resultat']
             contexte += f"=== Agent {data['agent'].upper()} ===\n"
             contexte += f"Instruction : {data['instruction']}\n"
-            contexte += f"Resultat : {data['resultat']}\n\n"
+            contexte += f"Resultat : {resultat_tronque}\n\n"
 
         system = (
             "Tu es un orchestrateur AI. Tu agrege les resultats de plusieurs agents specialises "
             "en une livrable finale complete, structuree et professionnelle en francais. "
-            "Sois synthetique : maximum 600 mots. Structure en sections claires. "
-            "Tu dois IMPERATIVEMENT terminer ta reponse avec une conclusion complete."
+            "Tu termines TOUJOURS toutes tes sections avant de t'arreter."
         )
 
         response = client.messages.create(
-            model=MODEL_NAME,
+            model="claude-sonnet-4-6",
             max_tokens=8096,
             system=system,
             messages=[{
                 "role": "user",
-                "content": f"{contexte}\n\nAggrege en une livrable finale structuree en francais. Maximum 600 mots. Termine toujours par une conclusion."
+                "content": f"{contexte}\n\nAggrege tous ces resultats en une livrable finale complete, structuree et directement utilisable en francais. Termine toujours par une conclusion."
             }],
         )
         synthese = response.content[0].text
-        return {**state, "synthese": synthese, "erreur": ""}
-    except Exception as e:
-        return {**state, "erreur": f"Erreur agregation : {str(e)}"}
-        synthese = response.content[0].text
-
-        return {**state, "synthese": synthese, "erreur": ""}
-    except Exception as e:
-        return {**state, "erreur": f"Erreur agregation : {str(e)}"}
-
         return {**state, "synthese": synthese, "erreur": ""}
     except Exception as e:
         return {**state, "erreur": f"Erreur agregation : {str(e)}"}
