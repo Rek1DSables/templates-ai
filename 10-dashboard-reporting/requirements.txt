@@ -1,0 +1,8 @@
+anthropic
+langgraph
+supabase
+streamlit
+python-dotenv
+plotly
+pandas
+fpdf2
