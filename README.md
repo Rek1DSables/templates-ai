@@ -1,6 +1,6 @@
 # Templates AI Automation — Portfolio Malt
 
-Collection de 38 templates d'automatisation IA production-ready, construits avec LangGraph, CrewAI, Claude API et les stacks les plus demandées sur le marché freelance 2025-2026.
+Collection de 23 templates d'automatisation IA production-ready, construits avec LangGraph, CrewAI, Claude API et les stacks les plus demandées sur le marché freelance 2025-2026.
 
 Chaque template est autonome, documenté et déployable en moins d'une heure.
 
@@ -25,44 +25,29 @@ Chaque template est autonome, documenté et déployable en moins d'une heure.
 
 | # | Nom | Stack | Niveau |
 |---|-----|-------|--------|
-| 01 | Chatbot FAQ | LangGraph + FAISS + Streamlit | Débutant |
-| 02 | Lead Qualifier | LangGraph + Supabase + Gmail + Streamlit | Débutant |
-| 03 | Générateur de contenu | CrewAI + Serper + Streamlit | Débutant |
-| 04 | Veille concurrentielle | CrewAI + Serper + Streamlit | Débutant |
-| 05 | Résumeur de documents | LangGraph + PyPDF + Streamlit | Débutant |
-| 06 | Extracteur de données web | LangGraph + BeautifulSoup + Streamlit | Débutant |
-| 07 | Support client multi-canal | LangGraph + Supabase + Streamlit | Intermédiaire |
-| 08 | Onboarding client | LangGraph + Gmail + Supabase + Streamlit | Intermédiaire |
-| 09 | Analyse sentiment | LangGraph + Apify + Streamlit | Intermédiaire |
-| 10 | Générateur de rapports | LangGraph + Pandas + FPDF2 + Streamlit | Intermédiaire |
-| 11 | Prospection LinkedIn | LangGraph + Streamlit | Intermédiaire |
-| 12 | Chatbot RAG | LangGraph + FAISS + HuggingFace + Streamlit | Intermédiaire |
-| 13 | Suivi de projet | LangGraph + Supabase + Streamlit | Intermédiaire |
-| 14 | Recrutement automatisé | LangGraph + Supabase + PyMuPDF + Streamlit | Intermédiaire |
-| 15 | Research & Reporting | CrewAI + Serper + Streamlit | Avancé |
-| 16 | Analyse financière | LangGraph + Pandas + Streamlit | Avancé |
-| 17 | Automatisation comptable | LangGraph + PyMuPDF + Supabase + Streamlit | Avancé |
-| 18 | Monitoring & Alertes | LangGraph + Gmail + Supabase + Streamlit | Avancé |
-| 19 | RAG Multi-Sources | LangGraph + FAISS + Supabase + Streamlit | Avancé |
-| 20 | Formation & Quiz Adaptatif | LangGraph + Supabase + Streamlit | Avancé |
-| 21 | Générateur de newsletters | LangGraph + Gmail + Supabase + Streamlit | Avancé |
-| 22 | Agent réseaux sociaux | LangGraph + Serper + Streamlit | Avancé |
-| 23 | Générateur de devis | LangGraph + FPDF2 + Supabase + Streamlit | Avancé |
-| 24 | Pipeline E-commerce | LangGraph + Supabase + Gmail + Streamlit | Avancé |
-| 25 | Agent CRM | LangGraph + Supabase + Streamlit | Avancé |
-| 26 | Dashboard Analytics | LangGraph + Pandas + Plotly + Streamlit | Avancé |
-| 27 | Agent de Prédiction | LangGraph + NumPy + Plotly + Streamlit | Avancé |
-| 28 | Veille légale & réglementaire | LangGraph + Serper + Supabase + Streamlit | Avancé |
-| 29 | Générateur de contrats | LangGraph + FPDF2 + Supabase + Streamlit | Avancé |
-| 30 | Onboarding employé | LangGraph + Gmail + Supabase + Streamlit | Avancé |
-| 31 | Transcription & résumé réunions | LangGraph + Supabase + Streamlit | Avancé |
-| 32 | Analyseur d'images & documents | LangGraph + Claude Vision + Streamlit | Avancé |
-| 33 | Agent de recherche ReAct | LangGraph + Serper + Streamlit | Expert |
-| 34 | Agent de trading paper | LangGraph + yfinance + Plotly + Streamlit | Expert |
-| 35 | Orchestrateur multi-agents | LangGraph + Serper + FPDF2 + Streamlit | Expert |
-| 36 | Support client enterprise | LangGraph + Gmail + Supabase + Streamlit | Expert |
-| 37 | Audit IA interne | LangGraph + FPDF2 + Streamlit | Expert |
-| 38 | Agent vocal entrant | LangGraph + Whisper + ElevenLabs + Streamlit | Expert |
+| 01 | Lead Qualifier | LangGraph + Supabase + Gmail + Streamlit | Débutant |
+| 02 | Agent Content Marketing Multicanal | LangGraph + Serper + FPDF2 + Streamlit | Intermédiaire |
+| 03 | Agent de Veille Multi-Sources | LangGraph + Serper + Supabase + Streamlit | Intermédiaire |
+| 04 | Dashboard Reporting & Analytics | LangGraph + Plotly + Supabase + FPDF2 + Streamlit | Intermédiaire |
+| 05 | Chatbot RAG | LangGraph + FAISS + HuggingFace + Streamlit | Intermédiaire |
+| 06 | Recrutement Automatisé | LangGraph + Supabase + PyMuPDF + Streamlit | Intermédiaire |
+| 07 | Automatisation Comptable | LangGraph + PyMuPDF + Supabase + Streamlit | Avancé |
+| 08 | Monitoring & Alertes | LangGraph + Gmail + Supabase + Streamlit | Avancé |
+| 09 | RAG Multi-Sources | LangGraph + FAISS + Supabase + Streamlit | Avancé |
+| 10 | Formation & Quiz Adaptatif | LangGraph + Supabase + Streamlit | Avancé |
+| 11 | Générateur de Newsletters | LangGraph + Gmail + Supabase + Streamlit | Avancé |
+| 12 | Générateur de Devis | LangGraph + FPDF2 + Supabase + Streamlit | Avancé |
+| 13 | Veille Légale & Réglementaire | LangGraph + Serper + Supabase + Streamlit | Avancé |
+| 14 | Générateur de Contrats | LangGraph + FPDF2 + Supabase + Streamlit | Avancé |
+| 15 | Onboarding Employé | LangGraph + Gmail + Supabase + Streamlit | Avancé |
+| 16 | Transcription & Résumé Réunions | LangGraph + Supabase + Streamlit | Avancé |
+| 17 | Analyseur d'Images & Documents | LangGraph + Claude Vision + Streamlit | Avancé |
+| 18 | Agent de Recherche ReAct | LangGraph + Serper + Streamlit | Expert |
+| 19 | Agent de Trading Paper | LangGraph + yfinance + Plotly + Streamlit | Expert |
+| 20 | Orchestrateur Multi-Agents | LangGraph + Serper + FPDF2 + Streamlit | Expert |
+| 21 | Support Client Enterprise | LangGraph + Gmail + Supabase + Streamlit | Expert |
+| 22 | Audit IA Interne | LangGraph + FPDF2 + Streamlit | Expert |
+| 23 | Agent Vocal Entrant | LangGraph + Whisper + ElevenLabs + Streamlit | Expert |
 
 ---
 
