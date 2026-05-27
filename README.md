@@ -1,6 +1,6 @@
 # Templates AI Automation — Portfolio Malt
 
-Collection de 23 templates d'automatisation IA production-ready, construits avec LangGraph, CrewAI, Claude API et les stacks les plus demandées sur le marché freelance 2025-2026.
+Collection de 24 templates d'automatisation IA production-ready, construits avec LangGraph, CrewAI, Claude API et les stacks les plus demandées sur le marché freelance 2025-2026.
 
 Chaque template est autonome, documenté et déployable en moins d'une heure.
 
@@ -48,6 +48,7 @@ Chaque template est autonome, documenté et déployable en moins d'une heure.
 | 21 | Support Client Enterprise | LangGraph + Gmail + Supabase + Streamlit | Expert |
 | 22 | Audit IA Interne | LangGraph + FPDF2 + Streamlit | Expert |
 | 23 | Agent Vocal Entrant | LangGraph + Whisper + ElevenLabs + Streamlit | Expert |
+| 24 | Générateur de Propositions Commerciales | LangGraph + FPDF2 + Supabase + Streamlit | Expert |
 
 ---
 
