@@ -1,0 +1,5 @@
+anthropic
+langgraph
+supabase
+streamlit
+python-dotenv
