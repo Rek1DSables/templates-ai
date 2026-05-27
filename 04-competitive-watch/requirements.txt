@@ -1,5 +1,0 @@
-streamlit
-crewai
-crewai-tools
-anthropic
-python-dotenv
