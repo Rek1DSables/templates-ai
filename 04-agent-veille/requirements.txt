@@ -1,0 +1,7 @@
+anthropic
+langgraph
+supabase
+streamlit
+python-dotenv
+requests
+fpdf2
