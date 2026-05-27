@@ -98,7 +98,8 @@ def generer_recommandations(state: ReportingState) -> ReportingState:
     try:
         system = """Tu es un consultant business senior.
 Tu generes des recommandations concretes et actionnables basees sur l'analyse des KPIs.
-Tu reponds toujours en francais avec un style professionnel."""
+Tu reponds toujours en francais avec un style professionnel.
+Tu termines TOUJOURS toutes tes recommandations avant de t'arreter."""
 
         kpis_str = "\n".join([f"- {k} : {v}" for k, v in state["kpis"].items()])
 
@@ -118,17 +119,20 @@ Tendances detectees :
 Alertes :
 {chr(10).join(f'- {a}' for a in state['alertes'])}
 
-Genere 5 recommandations prioritaires avec :
-- Action concrete
-- Impact attendu
-- Delai suggere (court/moyen/long terme)"""
+Genere 5 recommandations prioritaires avec pour chacune :
+- ACTION CONCRETE : description precise de l'action
+- IMPACT ATTENDU : resultat mesurable vise
+- DELAI : court terme (< 1 mois) / moyen terme (1-3 mois) / long terme (3-6 mois)
+- RESPONSABLE : profil en charge
+- KPI DE SUIVI : indicateur pour mesurer le succes"""
 
-        recommandations = invoke_with_retry(
+        response = client.messages.create(
+            model="claude-sonnet-4-6",
+            max_tokens=4096,
             system=system,
             messages=[{"role": "user", "content": prompt}],
-            max_tokens=1500,
         )
-
+        recommandations = response.content[0].text
         return {**state, "recommandations": recommandations, "erreur": ""}
     except Exception as e:
         return {**state, "erreur": f"Erreur recommandations : {str(e)}"}
