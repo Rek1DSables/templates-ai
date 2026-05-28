@@ -22,7 +22,7 @@ class AuditState(TypedDict):
     erreur: str
 
 
-def invoke_with_retry(messages: list, system: str, max_tokens: int = 4096) -> str:
+def invoke_with_retry(messages: list, system: str, max_tokens: int = 2000) -> str:
     for attempt in range(MAX_RETRIES):
         try:
             response = client.messages.create(
@@ -128,60 +128,101 @@ Reponds uniquement avec le JSON."""
         return {**state, "opportunites": [], "score_global": 0, "erreur": f"Erreur opportunites : {str(e)}"}
 
 
-def generer_roadmap(state: AuditState) -> AuditState:
+def generer_roadmap_partie1(state: AuditState) -> AuditState:
     try:
         system = """Tu es un consultant senior en transformation IA.
-Tu generes des roadmaps concis, realistes et priorises par ROI.
-Tu reponds en francais. Tu adaptes la longueur au sujet sans remplissage.
+Tu rediges des roadmaps professionnels, detailles et priorises par ROI en francais.
 Tu termines TOUJOURS toutes tes sections avant de t'arreter."""
 
-        opportunites_str = json.dumps(state["opportunites"], ensure_ascii=False, indent=2)
+        opportunites_courtes = []
+        for o in state["opportunites"]:
+            opportunites_courtes.append({
+                "tache": o.get("tache", ""),
+                "score_automatisabilite": o.get("score_automatisabilite", ""),
+                "gain_temps_heures_semaine": o.get("gain_temps_heures_semaine", ""),
+                "roi_estime_mois": o.get("roi_estime_mois", ""),
+                "priorite": o.get("priorite", ""),
+                "technologie_recommandee": o.get("technologie_recommandee", ""),
+            })
+        opportunites_str = json.dumps(opportunites_courtes, ensure_ascii=False, indent=2)
 
-        prompt = f"""Genere un roadmap IA pour :
+        prompt = f"""Redige les sections 1 a 4 du roadmap IA pour :
 
 Entreprise : {state['entreprise']}
 Secteur : {state['secteur']}
 Taille : {state['taille']}
-Budget : {state['budget_ia']}
-Score automatisabilite : {state['score_global']}/10
+Budget IA : {state['budget_ia']}
+Score global d'automatisabilite : {state['score_global']}/10
 
-Opportunites :
+Opportunites identifiees :
 {opportunites_str}
 
-Structure en 6 sections avec bullets concis :
-1. SYNTHESE EXECUTIVE (3 points cles)
-2. PHASE 1 QUICK WINS 0-3 mois (3 actions)
-3. PHASE 2 CONSOLIDATION 3-6 mois (2-3 projets)
-4. PHASE 3 TRANSFORMATION 6-12 mois (2 projets)
-5. BUDGET PAR PHASE (1 ligne par phase)
-6. PROCHAINES ETAPES (3 actions cette semaine)
+Redige ces 4 sections de facon detaillee et professionnelle :
+1. SYNTHESE EXECUTIVE : bilan de l'audit en 5 points cles
+2. PHASE 1 QUICK WINS (0-3 mois) : 3 actions a fort ROI avec budget et gain temps
+3. PHASE 2 CONSOLIDATION (3-6 mois) : 2-3 projets a complexite moyenne
+4. PHASE 3 TRANSFORMATION (6-12 mois) : 2 projets strategiques avances
 
-Regles :
-- Bullets courts, pas de phrases longues
-- Pas de sous-sections inutiles
-- Ne commence pas une section que tu ne peux pas terminer
-- La section 6 PROCHAINES ETAPES est obligatoire et doit etre complete"""
+Termine imperativement la section 4 avant de t'arreter."""
 
-        roadmap = invoke_with_retry(
+        response = client.messages.create(
+            model="claude-sonnet-4-6",
+            max_tokens=8096,
             system=system,
             messages=[{"role": "user", "content": prompt}],
-            max_tokens=4096,
         )
-
-        return {**state, "roadmap": roadmap, "erreur": ""}
+        return {**state, "roadmap": response.content[0].text, "erreur": ""}
     except Exception as e:
-        return {**state, "roadmap": "", "erreur": f"Erreur roadmap : {str(e)}"}
+        return {**state, "erreur": f"Erreur roadmap partie 1 : {str(e)}"}
+
+
+def generer_roadmap_partie2(state: AuditState) -> AuditState:
+    try:
+        system = """Tu es un consultant senior en transformation IA.
+Tu rediges des roadmaps professionnels en francais.
+Tu termines TOUJOURS toutes tes sections avant de t'arreter."""
+
+        prompt = f"""Redige les sections 5 a 8 du roadmap IA pour :
+
+Entreprise : {state['entreprise']}
+Secteur : {state['secteur']}
+Budget IA : {state['budget_ia']}
+Score global : {state['score_global']}/10
+
+Contexte des phases deja definies :
+{state['roadmap'][:1000]}
+
+Redige ces 4 sections de facon detaillee et professionnelle :
+5. BUDGET RECOMMANDE : tableau par phase avec totaux et couts recurrents
+6. KPIS DE SUIVI : 3-4 KPIs mesurables par processus automatise
+7. RISQUES ET MITIGATION : top 3 risques avec plan d action concret
+8. PROCHAINES ETAPES IMMEDIATES : 3 actions concretes a lancer cette semaine
+
+Termine IMPERATIVEMENT la section 8 avant de t'arreter."""
+
+        response = client.messages.create(
+            model="claude-sonnet-4-6",
+            max_tokens=8096,
+            system=system,
+            messages=[{"role": "user", "content": prompt}],
+        )
+        roadmap_complet = state["roadmap"] + "\n\n" + response.content[0].text
+        return {**state, "roadmap": roadmap_complet, "erreur": ""}
+    except Exception as e:
+        return {**state, "erreur": f"Erreur roadmap partie 2 : {str(e)}"}
 
 
 def build_graph():
     graph = StateGraph(AuditState)
     graph.add_node("analyser_processus", analyser_processus)
     graph.add_node("identifier_opportunites", identifier_opportunites)
-    graph.add_node("generer_roadmap", generer_roadmap)
+    graph.add_node("generer_roadmap_partie1", generer_roadmap_partie1)
+    graph.add_node("generer_roadmap_partie2", generer_roadmap_partie2)
 
     graph.set_entry_point("analyser_processus")
     graph.add_edge("analyser_processus", "identifier_opportunites")
-    graph.add_edge("identifier_opportunites", "generer_roadmap")
-    graph.add_edge("generer_roadmap", END)
+    graph.add_edge("identifier_opportunites", "generer_roadmap_partie1")
+    graph.add_edge("generer_roadmap_partie1", "generer_roadmap_partie2")
+    graph.add_edge("generer_roadmap_partie2", END)
 
     return graph.compile()
