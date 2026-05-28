@@ -1,6 +1,7 @@
 # graph.py
 import time
 import json
+import re
 import requests
 from urllib.parse import urlparse
 from bs4 import BeautifulSoup
@@ -73,7 +74,6 @@ def scraper_page(url: str) -> dict:
         images = soup.find_all("img")
         links = soup.find_all("a", href=True)
         texte = soup.get_text(separator=" ", strip=True)[:3000]
-
         images_sans_alt = [img for img in images if not img.get("alt")]
 
         return {
@@ -196,7 +196,6 @@ def analyser_concurrence(state: SEOState) -> SEOState:
     try:
         query_conc = f"{state['secteur']} {state['mots_cles'][0] if state['mots_cles'] else ''} site concurrent"
         concurrents = recherche_serper(query_conc, num=5)
-
         domain = urlparse(state["url"]).netloc
 
         system = """Tu es un expert en analyse concurrentielle SEO.
@@ -235,13 +234,13 @@ Analyse :
         return {**state, "analyse_concurrence": "", "erreur": f"Erreur concurrence : {str(e)}"}
 
 
-def generer_rapport(state: SEOState) -> SEOState:
+def generer_rapport_partie1(state: SEOState) -> SEOState:
     try:
         system = """Tu es un consultant SEO senior.
-Tu rediges des rapports SEO professionnels, structures et actionnables.
-Tu reponds en francais. Tu termines TOUJOURS toutes tes sections."""
+Tu rediges des rapports SEO professionnels et actionnables en francais.
+Tu termines TOUJOURS toutes tes sections avant de t'arreter."""
 
-        prompt = f"""Genere un rapport SEO complet pour :
+        prompt = f"""Redige les sections 1 et 2 du rapport SEO pour :
 
 URL : {state['url']}
 Type : {state['type_site']}
@@ -249,43 +248,100 @@ Secteur : {state['secteur']}
 Mots-cles : {', '.join(state['mots_cles'])}
 
 ANALYSE TECHNIQUE :
-{state['analyse_technique']}
+{state['analyse_technique'][:800]}
 
-ANALYSE MOTS-CLES :
-{state['analyse_mots_cles']}
+Sections a rediger :
+1. SCORE SEO GLOBAL (X/100) ET RESUME EXECUTIF : bilan en 5 points cles
+2. PROBLEMES CRITIQUES A CORRIGER : top 5 avec impact et solution concrete
 
-ANALYSE CONCURRENCE :
-{state['analyse_concurrence']}
+Sois detaille et professionnel. Termine imperativement la section 2."""
 
-Structure le rapport en 5 sections concises :
-1. SCORE SEO GLOBAL (X/100) ET RESUME EXECUTIF
-2. PROBLEMES CRITIQUES A CORRIGER (priorite haute)
-3. OPTIMISATIONS RECOMMANDEES (priorite moyenne)
-4. STRATEGIE MOTS-CLES (actions concretes)
-5. PLAN D'ACTION 30/60/90 JOURS
-
-Chaque section : bullets concis, actionnable, sans remplissage.
-Termine toujours le PLAN D'ACTION."""
-
-        rapport = invoke_with_retry(
+        response = client.messages.create(
+            model="claude-sonnet-4-6",
+            max_tokens=8096,
             system=system,
             messages=[{"role": "user", "content": prompt}],
-            max_tokens=4096,
         )
 
-        # Extraire le score SEO
         score = 50
-        for ligne in rapport.split("\n"):
+        for ligne in response.content[0].text.split("\n"):
             if "/100" in ligne and any(c.isdigit() for c in ligne):
-                import re
                 nombres = re.findall(r'\d+', ligne)
                 if nombres:
                     score = min(int(nombres[0]), 100)
                     break
 
-        return {**state, "rapport_seo": rapport, "score_seo": score, "erreur": ""}
+        return {**state, "rapport_seo": response.content[0].text, "score_seo": score, "erreur": ""}
     except Exception as e:
-        return {**state, "rapport_seo": "", "score_seo": 0, "erreur": f"Erreur rapport : {str(e)}"}
+        return {**state, "erreur": f"Erreur rapport partie 1 : {str(e)}"}
+
+
+def generer_rapport_partie2(state: SEOState) -> SEOState:
+    try:
+        system = """Tu es un consultant SEO senior.
+Tu rediges des rapports SEO professionnels et actionnables en francais.
+Tu termines TOUJOURS toutes tes sections avant de t'arreter."""
+
+        prompt = f"""Redige les sections 3 et 4 du rapport SEO pour :
+
+URL : {state['url']}
+Secteur : {state['secteur']}
+Mots-cles : {', '.join(state['mots_cles'])}
+
+ANALYSE MOTS-CLES :
+{state['analyse_mots_cles'][:800]}
+
+ANALYSE CONCURRENCE :
+{state['analyse_concurrence'][:600]}
+
+Sections a rediger :
+3. OPTIMISATIONS RECOMMANDEES : top 5 opportunites avec priorite et effort
+4. STRATEGIE MOTS-CLES : analyse par mot-cle avec difficulte, intention et recommandation
+
+Sois detaille et professionnel. Termine imperativement la section 4."""
+
+        response = client.messages.create(
+            model="claude-sonnet-4-6",
+            max_tokens=8096,
+            system=system,
+            messages=[{"role": "user", "content": prompt}],
+        )
+        rapport = state["rapport_seo"] + "\n\n" + response.content[0].text
+        return {**state, "rapport_seo": rapport, "erreur": ""}
+    except Exception as e:
+        return {**state, "erreur": f"Erreur rapport partie 2 : {str(e)}"}
+
+
+def generer_rapport_partie3(state: SEOState) -> SEOState:
+    try:
+        system = """Tu es un consultant SEO senior.
+Tu rediges des rapports SEO professionnels et actionnables en francais.
+Tu termines TOUJOURS toutes tes sections avant de t'arreter."""
+
+        prompt = f"""Redige la section 5 du rapport SEO pour :
+
+URL : {state['url']}
+Secteur : {state['secteur']}
+Mots-cles : {', '.join(state['mots_cles'])}
+
+Section a rediger :
+5. PLAN D'ACTION 30/60/90 JOURS :
+   - J+30 : 3 actions prioritaires avec responsable et KPI
+   - J+60 : 3 actions de consolidation avec responsable et KPI
+   - J+90 : 3 actions d'acceleration avec responsable et KPI
+
+Sois detaille et professionnel. Termine IMPERATIVEMENT le plan 90 jours."""
+
+        response = client.messages.create(
+            model="claude-sonnet-4-6",
+            max_tokens=8096,
+            system=system,
+            messages=[{"role": "user", "content": prompt}],
+        )
+        rapport = state["rapport_seo"] + "\n\n" + response.content[0].text
+        return {**state, "rapport_seo": rapport, "erreur": ""}
+    except Exception as e:
+        return {**state, "erreur": f"Erreur rapport partie 3 : {str(e)}"}
 
 
 def build_graph():
@@ -293,12 +349,16 @@ def build_graph():
     graph.add_node("analyser_technique", analyser_technique)
     graph.add_node("analyser_mots_cles", analyser_mots_cles)
     graph.add_node("analyser_concurrence", analyser_concurrence)
-    graph.add_node("generer_rapport", generer_rapport)
+    graph.add_node("generer_rapport_partie1", generer_rapport_partie1)
+    graph.add_node("generer_rapport_partie2", generer_rapport_partie2)
+    graph.add_node("generer_rapport_partie3", generer_rapport_partie3)
 
     graph.set_entry_point("analyser_technique")
     graph.add_edge("analyser_technique", "analyser_mots_cles")
     graph.add_edge("analyser_mots_cles", "analyser_concurrence")
-    graph.add_edge("analyser_concurrence", "generer_rapport")
-    graph.add_edge("generer_rapport", END)
+    graph.add_edge("analyser_concurrence", "generer_rapport_partie1")
+    graph.add_edge("generer_rapport_partie1", "generer_rapport_partie2")
+    graph.add_edge("generer_rapport_partie2", "generer_rapport_partie3")
+    graph.add_edge("generer_rapport_partie3", END)
 
     return graph.compile()
