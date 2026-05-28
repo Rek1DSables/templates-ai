@@ -129,67 +129,140 @@ Exemples de risques a chercher :
         return {**state, "risques": "", "score_risque": 50, "erreur": f"Erreur risques : {str(e)}"}
 
 
-def generer_resume(state: ContratAnalyseState) -> ContratAnalyseState:
+def generer_resume_partie1(state: ContratAnalyseState) -> ContratAnalyseState:
     try:
-        system = """Tu es un juriste senior expert en conseil contractuel.
-Tu rediges des resumes executifs clairs et des recommandations actionnables.
-Tu reponds toujours en francais avec un style professionnel."""
+        system = """Tu es un juriste expert en droit des contrats francais.
+Tu reponds toujours en francais avec un style juridique clair et concis.
+Tu termines TOUJOURS ta section avant de t'arreter."""
 
-        prompt = f"""Redige un resume executif et des recommandations pour ce contrat :
+        prompt = f"""Redige uniquement le RESUME EXECUTIF de ce contrat :
 
-Type : {state['type_contrat']}
-Score de risque : {state['score_risque']}/100
+Type : {state['type_contrat']} | Score risque : {state['score_risque']}/100
 
-CLAUSES EXTRAITES :
-{state['clauses_extraites']}
+RISQUES (resume) : {state['risques'][:400]}
 
-RISQUES IDENTIFIES :
-{state['risques']}
+Section a rediger :
+1. RESUME EXECUTIF
+- Nature et objet (2 lignes)
+- 3 points favorables
+- 4 points defavorables
+- Verdict : favorable / a negocier / ne pas signer
 
-Redige :
+Sois concis. Termine le verdict."""
 
-1. RESUME EXECUTIF (5-7 points cles)
-   - Nature et objet du contrat
-   - Points favorables
-   - Points defavorables
-   - Verdict global (favorable / a negocier / risque eleve)
-
-2. RECOMMANDATIONS PRIORITAIRES
-   - Actions AVANT signature (points a negocier absolument)
-   - Clauses a ajouter ou modifier
-   - Points de vigilance a surveiller
-
-3. VERDICT FINAL
-   - Peut-on signer tel quel ?
-   - Si non, quelles sont les conditions minimales ?"""
-
-        resume = invoke_with_retry(
+        reponse = invoke_with_retry(
             system=system,
             messages=[{"role": "user", "content": prompt}],
-            max_tokens=2000,
+            max_tokens=1000,
         )
-
-        # Extraire recommandations
-        recommandations = ""
-        if "RECOMMANDATIONS" in resume:
-            parts = resume.split("RECOMMANDATIONS")
-            if len(parts) > 1:
-                recommandations = parts[1].split("VERDICT")[0] if "VERDICT" in parts[1] else parts[1]
-
-        return {**state, "resume_executif": resume, "recommandations": recommandations, "erreur": ""}
+        return {**state, "resume_executif": reponse, "erreur": ""}
     except Exception as e:
-        return {**state, "resume_executif": "", "recommandations": "", "erreur": f"Erreur resume : {str(e)}"}
+        return {**state, "erreur": f"Erreur partie 1 : {str(e)}"}
+
+
+def generer_resume_partie2(state: ContratAnalyseState) -> ContratAnalyseState:
+    try:
+        system = """Tu es un juriste expert en droit des contrats francais.
+Tu reponds toujours en francais avec un style juridique clair et concis.
+Tu termines TOUJOURS ta section avant de t'arreter."""
+
+        prompt = f"""Redige uniquement les ACTIONS AVANT SIGNATURE de ce contrat :
+
+Type : {state['type_contrat']} | Score risque : {state['score_risque']}/100
+
+RISQUES (resume) : {state['risques'][:400]}
+
+Section a rediger :
+2. ACTIONS NON NEGOCIABLES AVANT SIGNATURE
+- 3 points a negocier absolument avec redaction de clause courte pour chacun
+
+Sois concis et actionnable. Termine la 3eme clause."""
+
+        reponse = invoke_with_retry(
+            system=system,
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=1000,
+        )
+        partie2 = state["resume_executif"] + "\n\n" + reponse
+        return {**state, "resume_executif": partie2, "erreur": ""}
+    except Exception as e:
+        return {**state, "erreur": f"Erreur partie 2 : {str(e)}"}
+
+
+def generer_resume_partie3(state: ContratAnalyseState) -> ContratAnalyseState:
+    try:
+        system = """Tu es un juriste expert en droit des contrats francais.
+Tu reponds toujours en francais avec un style juridique clair et concis.
+Tu termines TOUJOURS ta section avant de t'arreter."""
+
+        prompt = f"""Redige uniquement les CLAUSES A AJOUTER de ce contrat :
+
+Type : {state['type_contrat']} | Score risque : {state['score_risque']}/100
+
+RISQUES (resume) : {state['risques'][:400]}
+
+Section a rediger :
+3. CLAUSES A AJOUTER IMPERATIVEMENT
+- 3 clauses manquantes avec leur texte juridique court (5-6 lignes max par clause)
+
+Sois precis. Termine la 3eme clause."""
+
+        reponse = invoke_with_retry(
+            system=system,
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=1000,
+        )
+        partie3 = state["resume_executif"] + "\n\n" + reponse
+        return {**state, "resume_executif": partie3, "erreur": ""}
+    except Exception as e:
+        return {**state, "erreur": f"Erreur partie 3 : {str(e)}"}
+
+
+def generer_resume_partie4(state: ContratAnalyseState) -> ContratAnalyseState:
+    try:
+        system = """Tu es un juriste expert en droit des contrats francais.
+Tu reponds toujours en francais avec un style juridique clair et concis.
+Tu termines TOUJOURS ta section avant de t'arreter."""
+
+        prompt = f"""Redige uniquement le VERDICT FINAL de ce contrat :
+
+Type : {state['type_contrat']} | Score risque : {state['score_risque']}/100
+
+Section a rediger :
+4. VERDICT FINAL
+- Peut-on signer tel quel ? (oui/non + 2 lignes)
+- 3 conditions minimales avant signature
+- 4 etapes concretes a suivre
+- Recommandation finale en 1 phrase
+
+Termine la recommandation finale."""
+
+        reponse = invoke_with_retry(
+            system=system,
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=1000,
+        )
+        resume_complet = state["resume_executif"] + "\n\n" + reponse
+        return {**state, "resume_executif": resume_complet, "recommandations": reponse, "erreur": ""}
+    except Exception as e:
+        return {**state, "erreur": f"Erreur partie 4 : {str(e)}"}
 
 
 def build_graph():
     graph = StateGraph(ContratAnalyseState)
     graph.add_node("extraire_clauses", extraire_clauses)
     graph.add_node("analyser_risques", analyser_risques)
-    graph.add_node("generer_resume", generer_resume)
+    graph.add_node("generer_resume_partie1", generer_resume_partie1)
+    graph.add_node("generer_resume_partie2", generer_resume_partie2)
+    graph.add_node("generer_resume_partie3", generer_resume_partie3)
+    graph.add_node("generer_resume_partie4", generer_resume_partie4)
 
     graph.set_entry_point("extraire_clauses")
     graph.add_edge("extraire_clauses", "analyser_risques")
-    graph.add_edge("analyser_risques", "generer_resume")
-    graph.add_edge("generer_resume", END)
+    graph.add_edge("analyser_risques", "generer_resume_partie1")
+    graph.add_edge("generer_resume_partie1", "generer_resume_partie2")
+    graph.add_edge("generer_resume_partie2", "generer_resume_partie3")
+    graph.add_edge("generer_resume_partie3", "generer_resume_partie4")
+    graph.add_edge("generer_resume_partie4", END)
 
     return graph.compile()
