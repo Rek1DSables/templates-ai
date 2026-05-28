@@ -1,6 +1,6 @@
 # Templates AI Automation — Portfolio Malt
 
-Collection de 29 templates d'automatisation IA production-ready, construits avec LangGraph, CrewAI, Claude API et les stacks les plus demandées sur le marché freelance 2025-2026.
+Collection de 28 templates d'automatisation IA production-ready, construits avec LangGraph, CrewAI, Claude API et les stacks les plus demandées sur le marché freelance 2025-2026.
 
 Chaque template est autonome, documenté et déployable en moins d'une heure.
 
@@ -9,7 +9,7 @@ Chaque template est autonome, documenté et déployable en moins d'une heure.
 ## Stack principale
 
 - **Orchestration** : LangGraph, CrewAI
-- **LLM** : Anthropic Claude (claude-haiku-4-5-20251001)
+- **LLM** : Anthropic Claude (Haiku + Sonnet selon les nœuds)
 - **Interface** : Streamlit
 - **Base de données** : Supabase (PostgreSQL)
 - **Emails** : Gmail API (OAuth2)
@@ -43,17 +43,27 @@ Chaque template est autonome, documenté et déployable en moins d'une heure.
 | 16 | Transcription & Résumé Réunions | LangGraph + Supabase + Streamlit | Avancé |
 | 17 | Analyseur d'Images & Documents | LangGraph + Claude Vision + Streamlit | Avancé |
 | 18 | Agent de Recherche ReAct | LangGraph + Serper + Streamlit | Expert |
-| 19 | Agent de Trading Paper | LangGraph + yfinance + Plotly + Streamlit | Expert |
-| 20 | Orchestrateur Multi-Agents | LangGraph + Serper + FPDF2 + Streamlit | Expert |
-| 21 | Support Client Enterprise | LangGraph + Gmail + Supabase + Streamlit | Expert |
-| 22 | Audit IA Interne | LangGraph + FPDF2 + Streamlit | Expert |
-| 23 | Agent Vocal Entrant | LangGraph + Whisper + ElevenLabs + Streamlit | Expert |
-| 24 | Générateur de Propositions Commerciales | LangGraph + FPDF2 + Supabase + Streamlit | Expert |
-| 25 | Agent SEO | LangGraph + BeautifulSoup + Serper + FPDF2 + Streamlit | Expert |
-| 26 | Générateur de Rapports Clients | LangGraph + FPDF2 + Supabase + Streamlit | Expert |
-| 27 | Agent de Support Technique | LangGraph + Claude + Streamlit | Expert |
-| 28 | Analyseur de Contrats | LangGraph + PyMuPDF + FPDF2 + Streamlit | Expert |
-| 29 | Chatbot Multilingue | LangGraph + Supabase + Streamlit | Intermédiaire |
+| 19 | Orchestrateur Multi-Agents | LangGraph + Serper + FPDF2 + Streamlit | Expert |
+| 20 | Support Client Enterprise | LangGraph + Gmail + Supabase + Streamlit | Expert |
+| 21 | Audit IA Interne | LangGraph + FPDF2 + Streamlit | Expert |
+| 22 | Agent Vocal Entrant | LangGraph + Whisper + ElevenLabs + Streamlit | Expert |
+| 23 | Générateur de Propositions Commerciales | LangGraph + FPDF2 + Supabase + Streamlit | Expert |
+| 24 | Agent SEO | LangGraph + BeautifulSoup + Serper + FPDF2 + Streamlit | Expert |
+| 25 | Générateur de Rapports Clients | LangGraph + FPDF2 + Supabase + Streamlit | Expert |
+| 26 | Agent de Support Technique | LangGraph + Claude + Streamlit | Expert |
+| 27 | Analyseur de Contrats | LangGraph + PyMuPDF + FPDF2 + Streamlit | Expert |
+| 28 | Chatbot Multilingue | LangGraph + Supabase + Streamlit | Intermédiaire |
+
+---
+
+## Architecture LLM
+
+Les templates utilisent deux modèles selon la nature des nœuds :
+
+- **claude-haiku-4-5-20251001** — nœuds d'extraction, analyse, classification, JSON
+- **claude-sonnet-4-6** — nœuds de génération longue (rapports, roadmaps, propales, analyses SEO)
+
+Les templates upgradés Sonnet : 03, 04, 19, 21, 23, 24. Le template 27 utilise Haiku avec split en 4 appels.
 
 ---
 
