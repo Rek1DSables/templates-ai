@@ -9,29 +9,21 @@ client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
 
 
 class PropaleState(TypedDict):
-    # Infos prestataire
     prestataire_nom: str
     prestataire_email: str
     prestataire_expertise: str
-
-    # Infos client
     client_nom: str
     client_entreprise: str
     client_secteur: str
     client_email: str
-
-    # Mission
     type_mission: str
     description_besoin: str
     objectifs: str
     budget: str
     delai: str
     mode_facturation: str
-
-    # Outputs
     analyse_besoin: str
     solution_proposee: str
-    methodologie: str
     propale_complete: str
     erreur: str
 
@@ -119,14 +111,13 @@ Decris :
         return {**state, "solution_proposee": "", "erreur": f"Erreur solution : {str(e)}"}
 
 
-def rediger_propale(state: PropaleState) -> PropaleState:
+def rediger_propale_partie1(state: PropaleState) -> PropaleState:
     try:
         system = """Tu es un expert en redaction de propositions commerciales.
-Tu rediges des propales professionnelles, convaincantes et structurees.
-Tu reponds toujours en francais avec un style commercial et professionnel.
-Tu termines TOUJOURS toutes les sections avant de t'arreter."""
+Tu rediges des propales professionnelles, convaincantes et structurees en francais.
+Tu termines TOUJOURS toutes tes sections avant de t'arreter."""
 
-        prompt = f"""Redige une proposition commerciale complete pour :
+        prompt = f"""Redige les sections 1 a 4 de cette proposition commerciale :
 
 PRESTATAIRE : {state['prestataire_nom']} ({state['prestataire_email']})
 CLIENT : {state['client_nom']} — {state['client_entreprise']}
@@ -141,36 +132,68 @@ ANALYSE DU BESOIN :
 SOLUTION :
 {state['solution_proposee']}
 
-Redige la propale complete avec ces sections :
+Sections a rediger :
 1. CONTEXTE ET COMPREHENSION DU BESOIN
 2. NOTRE APPROCHE ET SOLUTION
 3. LIVRABLES ET PLANNING
 4. INVESTISSEMENT ({state['mode_facturation']} — {state['budget']})
+
+Style professionnel, concis, oriente resultats. Termine imperativement la section 4."""
+
+        response = client.messages.create(
+            model="claude-sonnet-4-6",
+            max_tokens=8096,
+            system=system,
+            messages=[{"role": "user", "content": prompt}],
+        )
+        return {**state, "propale_complete": response.content[0].text, "erreur": ""}
+    except Exception as e:
+        return {**state, "erreur": f"Erreur propale partie 1 : {str(e)}"}
+
+
+def rediger_propale_partie2(state: PropaleState) -> PropaleState:
+    try:
+        system = """Tu es un expert en redaction de propositions commerciales.
+Tu rediges des propales professionnelles en francais.
+Tu termines TOUJOURS toutes tes sections avant de t'arreter."""
+
+        prompt = f"""Redige les sections 5 a 7 de cette proposition commerciale :
+
+PRESTATAIRE : {state['prestataire_nom']}
+CLIENT : {state['client_nom']} — {state['client_entreprise']}
+MISSION : {state['type_mission']}
+BUDGET : {state['budget']}
+
+Sections a rediger :
 5. POURQUOI NOUS CHOISIR
 6. PROCHAINES ETAPES
 7. CONDITIONS GENERALES (paiement, confidentialite, propriete intellectuelle)
 
-Style : professionnel, concis, oriente resultats. Pas de jargon inutile."""
+Style professionnel. Termine IMPERATIVEMENT la section 7."""
 
-        propale = invoke_with_retry(
+        response = client.messages.create(
+            model="claude-sonnet-4-6",
+            max_tokens=4096,
             system=system,
             messages=[{"role": "user", "content": prompt}],
-            max_tokens=4096,
         )
-        return {**state, "propale_complete": propale, "erreur": ""}
+        propale_complete = state["propale_complete"] + "\n\n" + response.content[0].text
+        return {**state, "propale_complete": propale_complete, "erreur": ""}
     except Exception as e:
-        return {**state, "propale_complete": "", "erreur": f"Erreur propale : {str(e)}"}
+        return {**state, "erreur": f"Erreur propale partie 2 : {str(e)}"}
 
 
 def build_graph():
     graph = StateGraph(PropaleState)
     graph.add_node("analyser_besoin", analyser_besoin)
     graph.add_node("construire_solution", construire_solution)
-    graph.add_node("rediger_propale", rediger_propale)
+    graph.add_node("rediger_propale_partie1", rediger_propale_partie1)
+    graph.add_node("rediger_propale_partie2", rediger_propale_partie2)
 
     graph.set_entry_point("analyser_besoin")
     graph.add_edge("analyser_besoin", "construire_solution")
-    graph.add_edge("construire_solution", "rediger_propale")
-    graph.add_edge("rediger_propale", END)
+    graph.add_edge("construire_solution", "rediger_propale_partie1")
+    graph.add_edge("rediger_propale_partie1", "rediger_propale_partie2")
+    graph.add_edge("rediger_propale_partie2", END)
 
     return graph.compile()
