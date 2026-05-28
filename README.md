@@ -31,12 +31,12 @@ Chaque template est autonome, documenté et déployable en moins d'une heure.
 | 04 | Dashboard Reporting & Analytics | LangGraph + Plotly + Supabase + FPDF2 + Streamlit | Intermédiaire |
 | 05 | Chatbot RAG | LangGraph + FAISS + HuggingFace + Streamlit | Intermédiaire |
 | 06 | Recrutement Automatisé | LangGraph + Supabase + PyMuPDF + Streamlit | Intermédiaire |
-| 07 | Automatisation Comptable | LangGraph + PyMuPDF + Supabase + Streamlit | Avancé |
+| 07 | Agent Finance & Documents | LangGraph + PyMuPDF + FPDF2 + Streamlit | Avancé |
 | 08 | Monitoring & Alertes | LangGraph + Gmail + Supabase + Streamlit | Avancé |
 | 09 | RAG Multi-Sources | LangGraph + FAISS + Supabase + Streamlit | Avancé |
 | 10 | Formation & Quiz Adaptatif | LangGraph + Supabase + Streamlit | Avancé |
 | 11 | Générateur de Newsletters | LangGraph + Gmail + Supabase + Streamlit | Avancé |
-| 12 | Générateur de Devis | LangGraph + FPDF2 + Supabase + Streamlit | Avancé |
+| 12 | Agent Scraping & Extraction | LangGraph + BeautifulSoup + Pandas + Streamlit | Avancé |
 | 13 | Veille Légale & Réglementaire | LangGraph + Serper + Supabase + Streamlit | Avancé |
 | 14 | Générateur de Contrats | LangGraph + FPDF2 + Supabase + Streamlit | Avancé |
 | 15 | Onboarding Employé | LangGraph + Gmail + Supabase + Streamlit | Avancé |
@@ -125,6 +125,8 @@ Coûts mensuels estimés avec Anthropic Claude Haiku (provider par défaut), sel
 | 03 — Veille Multi-Sources | ~3€ | ~12€ | ~35€ |
 | 04 — Dashboard Reporting | ~2€ | ~7€ | ~20€ |
 | 05 — Chatbot RAG | ~1€ | ~5€ | ~15€ |
+| 07 — Finance & Documents | ~2€ | ~8€ | ~22€ |
+| 12 — Scraping & Extraction | ~1€ | ~4€ | ~12€ |
 | 19 — Orchestrateur | ~5€ | ~20€ | ~60€ |
 | 21 — Audit IA | ~4€ | ~15€ | ~45€ |
 | 23 — Propales | ~3€ | ~10€ | ~30€ |
@@ -202,6 +204,18 @@ Cas d'usage : automatiser le reporting client avec alertes en temps réel.
 
 ---
 
+**Pipeline data & prospection**
+```
+12 — Agent Scraping & Extraction
+      ↓ données extraites
+01 — Lead Qualifier
+      ↓ leads qualifiés
+23 — Générateur de Propales
+```
+Cas d'usage : scraper des prospects, les qualifier automatiquement et générer une propale.
+
+---
+
 ## Déploiement cloud
 
 Chaque template Streamlit peut être déployé en production en quelques minutes.
@@ -249,7 +263,9 @@ Variables clés à adapter par template sans toucher à la logique métier :
 | 04 — Dashboard | KPIs suivis, secteur, période d'analyse |
 | 05 — Chatbot RAG | Base de connaissance, ton de réponse |
 | 06 — Recrutement | Critères CV, grille de scoring, templates email |
+| 07 — Finance | Types de documents, taux de TVA, mentions légales |
 | 10 — Formation | Thèmes, niveaux de difficulté, nombre de questions |
+| 12 — Scraping | Types de données, champs personnalisés, nb URLs |
 | 21 — Audit IA | Secteur, taille entreprise, budget IA |
 | 23 — Propales | Types de mission, mode de facturation, expertise |
 | 24 — SEO | URL cible, mots-clés, type de site, secteur |
