@@ -1,6 +1,8 @@
 anthropic
 langgraph
-fpdf2
-supabase
 streamlit
 python-dotenv
+supabase
+fpdf2
+pymupdf
+pandas

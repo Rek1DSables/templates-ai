@@ -1,33 +1,50 @@
-# 29 — Générateur de Contrats AI
+# 10 — Agent Pipeline Contractuel Multi-Agents
 
-Pipeline de génération automatique de contrats freelance professionnels via LangGraph et Claude. L'utilisateur remplit un formulaire, Claude rédige le contrat structuré, FPDF2 produit le PDF téléchargeable, Supabase archive chaque contrat généré.
+Pipeline multi-agents de traitement contractuel complet. 4 agents spécialisés : extraction et structuration des clauses, analyse des risques juridiques, synthèse avec verdict, génération d'un contrat amélioré ou nouveau. 3 modes : analyse, génération, analyse + amélioration.
 
 ## Stack
 
-- **LangGraph** — orchestration du pipeline de génération
-- **Anthropic Claude** — rédaction juridique du contrat
-- **FPDF2** — génération du fichier PDF
-- **Supabase** — stockage des contrats générés
+- **LangGraph** — orchestration séquentielle 4 agents
+- **Anthropic Claude Sonnet** — synthèse et génération contrat
+- **Anthropic Claude Haiku** — extraction clauses et analyse risques
+- **Supabase** — persistance des contrats traités
+- **PyMuPDF** — extraction texte depuis PDF
+- **FPDF2** — export PDF rapport + contrat
 - **Streamlit** — interface utilisateur
+
+## Architecture des agents
+
+| Agent | Rôle |
+|-------|------|
+| Agent Extraction | Extrait et structure toutes les clauses contractuelles |
+| Agent Analyse Risques | Identifie risques, clauses abusives, illégalités |
+| Agent Synthèse | Verdict, recommandations, actions avant signature |
+| Agent Génération | Contrat amélioré ou nouveau contrat conforme |
 
 ## Fonctionnalités
 
-- Sélection du type de contrat (prestation, conseil, développement, mission freelance)
-- Formulaire prestataire + client + mission en une seule page
-- Génération Claude avec 10 articles juridiques structurés (objet, durée, tarif, obligations, confidentialité, propriété intellectuelle, résiliation, litiges)
-- Export PDF téléchargeable directement depuis l'interface
-- Archivage automatique dans Supabase
-- Retry automatique (3 tentatives, 5s) sur erreur overload Anthropic
+- 3 modes : Analyser / Générer / Analyser + Améliorer
+- 8 types de contrats supportés
+- Détection automatique des clauses obligatoires manquantes
+- Matrice des risques par niveau (critique / élevé / moyen / faible)
+- Score de risque global 0-100
+- Détection de clauses abusives et illégalités (ex: délai paiement > 60j LME)
+- Génération de contrat amélioré avec corrections des risques identifiés
+- Upload PDF ou saisie texte
+- Document de démo inclus avec clauses abusives intentionnelles
+- Persistance dans Supabase
+- Export PDF rapport complet + audit trail JSON
+- Retry automatique (3 tentatives, 5s)
 
 ## Structure
 
 ```
-29-generateur-contrats/
-├── app.py            # Interface Streamlit + génération PDF
-├── graph.py          # LangGraph + appel Claude
-├── config.py         # Configuration centralisée
-├── requirements.txt  # Dépendances
-├── .env              # Variables d'environnement
+10-agent-pipeline-contractuel-multi-agents/
+├── app.py          # Interface Streamlit
+├── graph.py        # LangGraph 4 agents
+├── config.py       # Types contrats, clauses obligatoires
+├── requirements.txt
+├── .env
 └── README.md
 ```
 
@@ -46,33 +63,15 @@ SUPABASE_URL=ton_url_supabase
 SUPABASE_KEY=ta_clé_supabase
 ```
 
-## SQL Supabase
+## Document de test inclus
 
-```sql
-CREATE TABLE contrats (
-    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    type_contrat TEXT,
-    freelance_nom TEXT,
-    client_nom TEXT,
-    prestation TEXT,
-    tarif TEXT,
-    duree TEXT,
-    date_debut TEXT,
-    contenu TEXT,
-    created_at TIMESTAMP DEFAULT NOW()
-);
-```
+Contrat INNOVATECH-DEVPRO avec 4 anomalies intentionnelles :
+- Délai paiement 90j (illégal — max 60j LME)
+- Responsabilité illimitée du prestataire
+- Résiliation asymétrique (6 mois prestataire vs 0 client)
+- Cession PI des outils propriétaires du prestataire
 
-## Données de test
+## Modèles utilisés
 
-- Type : Prestation de services
-- Prestataire : Jean Martin / jean@freelance.fr
-- Client : Acme Corp / contact@acme.com
-- Prestation : Développement d'un chatbot AI pour le service client
-- Tarif : 600€ HT/jour
-- Durée : 2 mois
-- Date de début : 01/06/2026
-
-## Modèle utilisé
-
-`claude-haiku-4-5-20251001`
+- `claude-haiku-4-5-20251001` — extraction et risques
+- `claude-sonnet-4-6` — synthèse et génération
