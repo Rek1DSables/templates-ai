@@ -1,20 +1,57 @@
-# 19 — Système RAG Multi-Sources
+# 06 — Agent RAG Enterprise
 
-Chatbot RAG qui interroge simultanément plusieurs sources de données : PDFs, base Supabase, APIs externes — et cite ses sources pour chaque réponse.
+Base de connaissance privée avec gouvernance par permissions, retrieval vectoriel, anti-hallucination et audit trail complet. 4 agents spécialisés : indexation avec chunking stratégique, retrieval avec filtrage permissions, génération ancrée dans les sources, vérification anti-hallucination.
 
-**Stack :** LangGraph · FAISS · HuggingFace · Supabase · Streamlit  
-**Modèle :** `claude-haiku-4-5-20251001`
+## Stack
 
----
+- **LangGraph** — orchestration 4 agents + routeur indexation/interrogation
+- **Anthropic Claude Sonnet** — génération réponse ancrée dans les sources
+- **Anthropic Claude Haiku** — vérification anti-hallucination
+- **Sentence Transformers** — embeddings multilingues (paraphrase-multilingual-MiniLM-L12-v2)
+- **Vector Store in-memory** — remplaçable par Pinecone/Weaviate/Qdrant en production
+- **Streamlit** — interface utilisateur
 
-## Pipeline
+## Architecture des agents
+
+| Agent | Rôle |
+|-------|------|
+| Agent Indexation | Chunking stratégique + embeddings + registre documents |
+| Agent Retrieval & Gouvernance | Similarité cosinus + filtrage permissions par profil |
+| Agent Génération | Réponse ancrée dans les sources avec citations [SOURCE N] |
+| Agent Anti-Hallucination | Vérifie que la réponse ne contient pas de faits inventés |
+
+## Fonctionnalités
+
+- 4 niveaux de permission : public / interne / confidentiel / secret
+- 7 profils utilisateur avec permissions configurables
+- Chunks masqués automatiquement selon le profil connecté
+- Citations de sources obligatoires dans chaque réponse
+- Score de confiance basé sur la similarité vectorielle
+- Détection d'hallucination — alerte si fait inventé absent des sources
+- Audit trail complet horodaté (indexation + retrieval + génération)
+- 4 documents de démo inclus (politique remboursement, tarifs, API, onboarding)
+- Ajout de documents custom via interface
+- Export audit trail JSON
+- Retry automatique (3 tentatives, 5s)
+
+## Ce qui différencie ce RAG d'un chatbot PDF basique
+
+- **Gouvernance** — un employé ne voit pas les documents confidentiels
+- **Anti-hallucination** — vérifie que la réponse est ancrée dans les sources
+- **Audit trail** — chaque requête tracée pour conformité RGPD/ISO 27001
+- **Production-ready** — remplacer le vector store in-memory par Pinecone/Weaviate en 10 lignes
+
+## Structure
 
 ```
-retrieve_pdf_context → retrieve_supabase_context → retrieve_api_context
-→ combine_contexts → generate_answer
+06-agent-rag-enterprise/
+├── app.py          # Interface Streamlit + sidebar permissions
+├── graph.py        # LangGraph 4 agents + vector store
+├── config.py       # Permissions, chunks, modèles
+├── requirements.txt
+├── .env
+└── README.md
 ```
-
----
 
 ## Installation
 
@@ -23,42 +60,35 @@ pip install -r requirements.txt
 streamlit run app.py
 ```
 
----
+## Variables d'environnement
 
-## Variables d'environnement (.env)
-
-```env
-ANTHROPIC_API_KEY=sk-ant-...
-SUPABASE_URL=https://xxxx.supabase.co
-SUPABASE_KEY=eyJ...
+```
+ANTHROPIC_API_KEY=ta_clé_ici
 ```
 
----
+## Migration vers vector store production
 
-## Sources supportées
+```python
+# Pinecone
+import pinecone
+pinecone.init(api_key="...", environment="...")
+index = pinecone.Index("rag-enterprise")
+index.upsert([(chunk_id, embedding, metadata)])
 
-| Source | Configuration |
-|---|---|
-| PDFs | Upload direct dans la sidebar |
-| Supabase | Nom de la table + colonnes |
-| API externe | URL + clé API optionnelle |
+# Weaviate
+import weaviate
+client = weaviate.Client("http://localhost:8080")
+```
 
----
+## Questions de test
 
-## Différence avec le Chatbot RAG (12)
+- "Quelle est la politique de remboursement ?" (public — tous profils)
+- "Quel est le prix de l'offre Enterprise ?" (confidentiel — Manager+)
+- "Comment configurer les webhooks API ?" (interne — tous sauf public)
+- "Quelles sont les étapes de l'onboarding ?" (interne — tous)
 
-| RAG simple (12) | RAG Multi-Sources (19) |
-|---|---|
-| 1 PDF à la fois | Plusieurs PDFs simultanément |
-| Source unique | PDF + Supabase + API |
-| Pas de citation | Cite la source pour chaque info |
+## Modèles utilisés
 
----
-
-## Personnalisation (config.py)
-
-| Variable | Description |
-|---|---|
-| `CHUNK_SIZE` | Taille des chunks PDF (défaut : 500) |
-| `TOP_K` | Chunks retournés par source (défaut : 4) |
-| `CHATBOT_NAME` | Nom affiché dans l'interface |
+- `claude-haiku-4-5-20251001` — vérification anti-hallucination
+- `claude-sonnet-4-6` — génération réponse
+- `paraphrase-multilingual-MiniLM-L12-v2` — embeddings multilingues

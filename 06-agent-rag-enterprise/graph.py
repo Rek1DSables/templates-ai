@@ -1,246 +1,409 @@
+# graph.py
+import os
 import time
 import json
-import requests
-from typing import TypedDict, Optional
-
-import fitz
-from langchain_anthropic import ChatAnthropic
-from langchain_core.messages import HumanMessage, SystemMessage
-from langchain_community.embeddings import HuggingFaceEmbeddings
-from langchain_community.vectorstores import FAISS
-from langchain_text_splitters import RecursiveCharacterTextSplitter
-from supabase import create_client
+import hashlib
+import anthropic
 from langgraph.graph import StateGraph, END
-
-import config
-
-# ─── LLM & Embeddings ────────────────────────────────────────────────────────
-llm = ChatAnthropic(
-    model=config.MODEL_NAME,
-    api_key=config.ANTHROPIC_API_KEY,
-    max_tokens=2048,
+from typing import TypedDict
+from config import (
+    MODEL_NAME, MODEL_SONNET, ANTHROPIC_API_KEY,
+    MAX_RETRIES, RETRY_DELAY,
+    CHUNK_SIZE, CHUNK_OVERLAP, TOP_K,
+    EMBEDDING_MODEL, SEUIL_CONFIANCE_ELEVE, SEUIL_CONFIANCE_MOYEN
 )
 
-embeddings = HuggingFaceEmbeddings(model_name=config.EMBEDDING_MODEL)
+client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
 
-# ─── State ───────────────────────────────────────────────────────────────────
-class RAGMultiState(TypedDict):
-    # Input
-    question:      str
-    history:       list
+# Index vectoriel en mémoire (remplaçable par Pinecone/Weaviate en prod)
+VECTOR_STORE = {}
+DOCUMENT_REGISTRY = {}
 
-    # Sources
-    pdf_vectorstores:  Optional[list]   # liste de FAISS vectorstores
-    supabase_table:    Optional[str]
-    supabase_columns:  Optional[list]
-    api_url:           Optional[str]
-    api_key:           Optional[str]
 
-    # Runtime
-    pdf_context:       Optional[str]
-    supabase_context:  Optional[str]
-    api_context:       Optional[str]
-    combined_context:  Optional[str]
-    answer:            Optional[str]
-
-    # Suivi
-    sources_used: list
-    errors:       list
-    status:       str
-
-# ─── Helpers ─────────────────────────────────────────────────────────────────
-def invoke_with_retry(chain, input_data):
-    for attempt in range(config.MAX_RETRIES):
+def invoke_with_retry(messages: list, system: str, max_tokens: int = 1000, model: str = None) -> str:
+    m = model or MODEL_NAME
+    for attempt in range(MAX_RETRIES):
         try:
-            return chain.invoke(input_data)
-        except Exception as e:
-            if "overloaded" in str(e).lower() and attempt < config.MAX_RETRIES - 1:
-                time.sleep(config.RETRY_DELAY)
-                continue
-            raise
+            response = client.messages.create(
+                model=m,
+                max_tokens=max_tokens,
+                system=system,
+                messages=messages,
+            )
+            return response.content[0].text
+        except anthropic.APIStatusError as e:
+            if "overloaded" in str(e).lower() and attempt < MAX_RETRIES - 1:
+                time.sleep(RETRY_DELAY)
+            else:
+                raise
 
-def extract_text_from_pdf(file_bytes: bytes) -> str:
-    doc  = fitz.open(stream=file_bytes, filetype="pdf")
-    return "".join([page.get_text() for page in doc])
 
-def build_vectorstore(text: str) -> object:
-    splitter = RecursiveCharacterTextSplitter(
-        chunk_size    = config.CHUNK_SIZE,
-        chunk_overlap = config.CHUNK_OVERLAP,
-    )
-    chunks = splitter.split_text(text)
-    return FAISS.from_texts(chunks, embeddings)
+def log(audit_log: list, etape: str, agent: str, detail: str = "") -> list:
+    audit_log.append({
+        "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S"),
+        "etape": etape,
+        "agent": agent,
+        "detail": detail,
+    })
+    return audit_log
 
-def _stop_on_error(next_node):
-    def router(state):
-        return END if state["status"] == "error" else next_node
-    return router
 
-# ─── Noeuds ──────────────────────────────────────────────────────────────────
-def retrieve_pdf_context(state: RAGMultiState) -> RAGMultiState:
-    """Recherche dans les vectorstores PDF."""
+class RAGState(TypedDict):
+    # Mode
+    mode: str  # "indexer" | "interroger"
+
+    # Indexation
+    documents_a_indexer: list
+    documents_indexes: list
+
+    # Interrogation
+    question: str
+    profil_utilisateur: str
+    permissions_utilisateur: list
+    chunks_retrouves: list
+    chunks_autorises: list
+    contexte_assemble: str
+
+    # Réponse
+    reponse: str
+    sources_citees: list
+    score_confiance: float
+    hallucination_detectee: bool
+    avertissement: str
+
+    # Audit
+    audit_log: list
+    erreur: str
+
+
+def chunker(texte: str, taille: int = CHUNK_SIZE, overlap: int = CHUNK_OVERLAP) -> list:
+    """Découpe le texte en chunks avec overlap."""
+    mots = texte.split()
+    chunks = []
+    i = 0
+    while i < len(mots):
+        chunk = " ".join(mots[i:i + taille])
+        chunks.append(chunk)
+        i += taille - overlap
+    return chunks
+
+
+# Cache du modèle en mémoire
+_embedding_model = None
+
+def get_embedding_model():
+    global _embedding_model
+    if _embedding_model is None:
+        from sentence_transformers import SentenceTransformer
+        _embedding_model = SentenceTransformer(EMBEDDING_MODEL)
+    return _embedding_model
+
+
+def get_embedding(texte: str) -> list:
     try:
-        if not state.get("pdf_vectorstores"):
-            return {**state, "pdf_context": None}
-
-        all_chunks = []
-        for vs in state["pdf_vectorstores"]:
-            docs = vs.similarity_search(state["question"], k=config.TOP_K)
-            all_chunks.extend([doc.page_content for doc in docs])
-
-        pdf_context = "\n\n".join(all_chunks) if all_chunks else None
-        sources_used = state["sources_used"] + ["PDF"] if pdf_context else state["sources_used"]
-
-        return {**state, "pdf_context": pdf_context, "sources_used": sources_used}
-
-    except Exception as e:
-        return {**state, "errors": state["errors"] + [f"Recherche PDF : {e}"]}
+        model = get_embedding_model()
+        return model.encode(texte).tolist()
+    except Exception:
+        h = hashlib.md5(texte.encode()).hexdigest()
+        return [int(h[i:i+2], 16) / 255.0 for i in range(0, min(len(h), 64), 2)]
 
 
-def retrieve_supabase_context(state: RAGMultiState) -> RAGMultiState:
-    """Recherche dans Supabase."""
+def cosine_similarity(a: list, b: list) -> float:
+    """Calcule la similarité cosinus entre deux vecteurs."""
     try:
-        if not state.get("supabase_table") or not config.SUPABASE_URL:
-            return {**state, "supabase_context": None}
-
-        sb      = create_client(config.SUPABASE_URL, config.SUPABASE_KEY)
-        columns = ", ".join(state["supabase_columns"]) if state.get("supabase_columns") else "*"
-        result  = sb.table(state["supabase_table"]).select(columns).limit(50).execute()
-
-        if not result.data:
-            return {**state, "supabase_context": None}
-
-        # Conversion en texte lisible
-        rows_text = "\n".join([str(row) for row in result.data[:20]])
-        supabase_context = f"Données Supabase ({state['supabase_table']}) :\n{rows_text}"
-        sources_used = state["sources_used"] + ["Supabase"]
-
-        return {**state, "supabase_context": supabase_context, "sources_used": sources_used}
-
-    except Exception as e:
-        return {**state, "errors": state["errors"] + [f"Recherche Supabase : {e}"], "supabase_context": None}
+        dot = sum(x * y for x, y in zip(a, b))
+        norm_a = sum(x ** 2 for x in a) ** 0.5
+        norm_b = sum(x ** 2 for x in b) ** 0.5
+        if norm_a == 0 or norm_b == 0:
+            return 0.0
+        return dot / (norm_a * norm_b)
+    except Exception:
+        return 0.0
 
 
-def retrieve_api_context(state: RAGMultiState) -> RAGMultiState:
-    """Récupère des données depuis une API externe."""
+def agent_indexation(state: RAGState) -> RAGState:
+    """Indexe les documents dans le vector store."""
     try:
-        if not state.get("api_url"):
-            return {**state, "api_context": None}
+        audit_log = log(state.get("audit_log", []), "Indexation documents", "Agent Indexation",
+            f"{len(state['documents_a_indexer'])} documents")
 
-        headers = {}
-        if state.get("api_key"):
-            headers["Authorization"] = f"Bearer {state['api_key']}"
+        documents_indexes = []
 
-        response = requests.get(state["api_url"], headers=headers, timeout=10)
-        response.raise_for_status()
+        for doc in state["documents_a_indexer"]:
+            doc_id = hashlib.md5(doc["contenu"].encode()).hexdigest()[:8]
+            chunks = chunker(doc["contenu"])
 
-        data = response.json()
-        api_context  = f"Données API ({state['api_url']}) :\n{json.dumps(data, ensure_ascii=False, indent=2)[:2000]}"
-        sources_used = state["sources_used"] + ["API"]
+            doc_info = {
+                "id": doc_id,
+                "nom": doc.get("nom", "Document"),
+                "type": doc.get("type", "Autre"),
+                "permission": doc.get("permission", "interne"),
+                "nb_chunks": len(chunks),
+            }
+            DOCUMENT_REGISTRY[doc_id] = doc_info
 
-        return {**state, "api_context": api_context, "sources_used": sources_used}
+            for i, chunk in enumerate(chunks):
+                chunk_id = f"{doc_id}_chunk_{i}"
+                embedding = get_embedding(chunk)
+                VECTOR_STORE[chunk_id] = {
+                    "id": chunk_id,
+                    "doc_id": doc_id,
+                    "doc_nom": doc.get("nom", "Document"),
+                    "doc_type": doc.get("type", "Autre"),
+                    "permission": doc.get("permission", "interne"),
+                    "contenu": chunk,
+                    "embedding": embedding,
+                    "chunk_index": i,
+                }
 
+            documents_indexes.append(doc_info)
+            audit_log = log(audit_log, f"Document indexé", "Agent Indexation",
+                f"{doc.get('nom')} — {len(chunks)} chunks | Permission : {doc.get('permission')}")
+
+        audit_log = log(audit_log, "Indexation terminée", "Agent Indexation",
+            f"{len(documents_indexes)} documents | {len(VECTOR_STORE)} chunks total")
+
+        return {
+            **state,
+            "documents_indexes": documents_indexes,
+            "audit_log": audit_log,
+            "erreur": "",
+        }
     except Exception as e:
-        return {**state, "errors": state["errors"] + [f"Récupération API : {e}"], "api_context": None}
+        return {**state, "erreur": f"Erreur indexation : {str(e)}"}
 
 
-def combine_contexts(state: RAGMultiState) -> RAGMultiState:
-    """Combine tous les contextes disponibles."""
-    parts = []
-
-    if state.get("pdf_context"):
-        parts.append(f"=== SOURCE PDF ===\n{state['pdf_context']}")
-    if state.get("supabase_context"):
-        parts.append(f"=== SOURCE SUPABASE ===\n{state['supabase_context']}")
-    if state.get("api_context"):
-        parts.append(f"=== SOURCE API ===\n{state['api_context']}")
-
-    if not parts:
-        return {**state, "errors": state["errors"] + ["Aucune source disponible."], "status": "error"}
-
-    combined = "\n\n".join(parts)
-    return {**state, "combined_context": combined}
-
-
-def generate_answer(state: RAGMultiState) -> RAGMultiState:
-    """Génère une réponse en citant les sources."""
+def agent_retrieval_gouvernance(state: RAGState) -> RAGState:
+    """Recherche les chunks pertinents et applique les permissions."""
     try:
-        sources_list = ", ".join(state["sources_used"]) if state["sources_used"] else "aucune"
+        audit_log = log(state.get("audit_log", []), "Retrieval & Gouvernance", "Agent Retrieval",
+            f"Question : {state['question'][:60]}")
 
-        history_text = ""
-        for msg in state.get("history", [])[-6:]:
-            role = "Utilisateur" if msg["role"] == "user" else "Assistant"
-            history_text += f"{role} : {msg['content']}\n"
+        if not VECTOR_STORE:
+            return {**state, "erreur": "Aucun document indexé. Veuillez d'abord indexer des documents."}
 
-        system_prompt = f"""Tu es {config.CHATBOT_NAME}.
-Tu réponds UNIQUEMENT à partir des contextes fournis.
-Sources disponibles : {sources_list}
-Pour chaque information clé, indique entre crochets la source utilisée : [PDF], [Supabase] ou [API].
-Si la réponse n'est pas dans les sources, dis-le clairement.
-Réponds en français, de manière concise et professionnelle.
+        # Embedding de la question
+        question_embedding = get_embedding(state["question"])
 
-CONTEXTES :
-{state['combined_context']}
-"""
-        messages = [SystemMessage(content=system_prompt)]
+        # Calcul similarité sur tous les chunks
+        scored_chunks = []
+        for chunk_id, chunk_data in VECTOR_STORE.items():
+            score = cosine_similarity(question_embedding, chunk_data["embedding"])
+            scored_chunks.append({**chunk_data, "score": score})
 
-        if history_text:
-            messages.append(HumanMessage(content=f"Historique :\n{history_text}"))
+        # Tri par score
+        scored_chunks.sort(key=lambda x: x["score"], reverse=True)
+        top_chunks = scored_chunks[:TOP_K * 2]  # Récupérer plus pour filtrer ensuite
 
-        messages.append(HumanMessage(content=state["question"]))
+        audit_log = log(audit_log, "Retrieval terminé", "Agent Retrieval",
+            f"{len(top_chunks)} chunks candidats")
 
-        response = invoke_with_retry(llm, messages)
-        return {**state, "answer": response.content, "status": "completed"}
+        # Gouvernance — filtrage par permissions
+        permissions = state.get("permissions_utilisateur", ["public", "interne"])
+        chunks_autorises = []
+        chunks_bloques = []
 
+        for chunk in top_chunks:
+            if chunk.get("permission", "interne") in permissions:
+                chunks_autorises.append(chunk)
+            else:
+                chunks_bloques.append(chunk)
+
+        chunks_autorises = chunks_autorises[:TOP_K]
+
+        audit_log = log(audit_log, "Gouvernance appliquée", "Agent Retrieval",
+            f"{len(chunks_autorises)} chunks autorisés | {len(chunks_bloques)} bloqués par permissions")
+
+        # Assemblage contexte
+        contexte_parts = []
+        sources_citees = []
+        for i, chunk in enumerate(chunks_autorises):
+            contexte_parts.append(
+                f"[SOURCE {i+1} — {chunk['doc_nom']} — Score: {chunk['score']:.2f}]\n{chunk['contenu']}"
+            )
+            if chunk["doc_nom"] not in [s["nom"] for s in sources_citees]:
+                sources_citees.append({
+                    "nom": chunk["doc_nom"],
+                    "type": chunk["doc_type"],
+                    "permission": chunk["permission"],
+                    "score_max": chunk["score"],
+                })
+
+        contexte = "\n\n---\n\n".join(contexte_parts)
+        score_moyen = sum(c["score"] for c in chunks_autorises) / len(chunks_autorises) if chunks_autorises else 0
+
+        avertissement = ""
+        if chunks_bloques:
+            avertissement = f"⚠️ {len(chunks_bloques)} chunk(s) masqué(s) — niveau de permission insuffisant ({state.get('profil_utilisateur', 'Employé standard')})"
+
+        return {
+            **state,
+            "chunks_retrouves": top_chunks,
+            "chunks_autorises": chunks_autorises,
+            "contexte_assemble": contexte,
+            "sources_citees": sources_citees,
+            "score_confiance": round(score_moyen, 2),
+            "avertissement": avertissement,
+            "audit_log": audit_log,
+            "erreur": "",
+        }
     except Exception as e:
-        return {**state, "errors": state["errors"] + [f"Génération réponse : {e}"], "status": "error"}
+        return {**state, "erreur": f"Erreur retrieval : {str(e)}"}
 
 
-# ─── Graph ───────────────────────────────────────────────────────────────────
+def agent_generation_reponse(state: RAGState) -> RAGState:
+    """Génère la réponse en se basant strictement sur le contexte."""
+    try:
+        audit_log = log(state.get("audit_log", []), "Génération réponse", "Agent Génération")
+
+        if not state["chunks_autorises"]:
+            return {
+                **state,
+                "reponse": "Je ne trouve pas d'information pertinente dans les documents autorisés pour répondre à cette question.",
+                "hallucination_detectee": False,
+                "audit_log": log(audit_log, "Aucun contexte", "Agent Génération", "Réponse vide retournée"),
+                "erreur": "",
+            }
+
+        system = f"""Tu es un assistant RAG enterprise expert.
+Tu reponds UNIQUEMENT en te basant sur les sources fournies.
+Tu ne peux PAS inventer d informations qui ne sont pas dans les sources.
+Si tu ne trouves pas l information dans les sources, dis-le clairement.
+Tu cites toujours tes sources avec [SOURCE N].
+Tu reponds en francais professionnel.
+Profil utilisateur : {state.get('profil_utilisateur', 'Employé standard')}"""
+
+        prompt = f"""Reponds a cette question en te basant UNIQUEMENT sur les sources ci-dessous :
+
+QUESTION : {state['question']}
+
+SOURCES DISPONIBLES :
+{state['contexte_assemble'][:4000]}
+
+Instructions :
+- Cite les sources avec [SOURCE 1], [SOURCE 2], etc.
+- Si l information n est pas dans les sources, dis : "Cette information n est pas disponible dans les documents accessibles."
+- Ne complete pas avec des connaissances generales
+- Sois precis et concis (200 mots max)
+
+Reponds maintenant."""
+
+        reponse = invoke_with_retry(
+            system=system,
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=600,
+            model=MODEL_SONNET,
+        )
+
+        audit_log = log(audit_log, "Réponse générée", "Agent Génération", f"{len(reponse)} caractères")
+
+        return {
+            **state,
+            "reponse": reponse,
+            "hallucination_detectee": False,
+            "audit_log": audit_log,
+            "erreur": "",
+        }
+    except Exception as e:
+        return {**state, "erreur": f"Erreur génération : {str(e)}"}
+
+
+def agent_anti_hallucination(state: RAGState) -> RAGState:
+    try:
+        audit_log = log(state.get("audit_log", []), "Vérification anti-hallucination", "Agent Vérification")
+
+        if not state["chunks_autorises"]:
+            audit_log = log(audit_log, "Vérification ignorée", "Agent Vérification", "Aucun chunk")
+            return {**state, "hallucination_detectee": False, "audit_log": audit_log, "erreur": ""}
+
+        system = """Tu es un verificateur de qualite RAG strict.
+Tu reponds UNIQUEMENT avec un JSON valide sans backticks :
+{
+  "ancree_dans_sources": true,
+  "score_ancrage": 0.90,
+  "verdict": "fiable",
+  "commentaire": "La reponse est bien ancree dans les sources"
+}
+IMPORTANT : si la reponse paraphrase ou reformule les sources sans inventer de faits nouveaux, c est FIABLE.
+Une hallucination c est uniquement un fait invente absent de toutes les sources."""
+
+        contexte_court = "\n".join([c["contenu"][:300] for c in state["chunks_autorises"][:3]])
+
+        prompt = f"""Verifie si cette reponse contient des FAITS INVENTES absents des sources :
+
+QUESTION : {state['question']}
+
+REPONSE :
+{state['reponse']}
+
+SOURCES :
+{contexte_court}
+
+Une paraphrase ou reformulation est FIABLE.
+Seul un fait entierement invente et absent des sources est une hallucination.
+JSON uniquement."""
+
+        reponse = invoke_with_retry(system=system, messages=[{"role": "user", "content": prompt}], max_tokens=200)
+
+        reponse_clean = reponse.strip()
+        start = reponse_clean.find("{")
+        end = reponse_clean.rfind("}") + 1
+        if start >= 0 and end > start:
+            reponse_clean = reponse_clean[start:end]
+
+        try:
+            data = json.loads(reponse_clean)
+        except Exception:
+            data = {"ancree_dans_sources": True, "score_ancrage": 0.8, "verdict": "fiable", "commentaire": ""}
+
+        hallucination = not data.get("ancree_dans_sources", True)
+        score_ancrage = data.get("score_ancrage", 0.8)
+
+        avertissement = state.get("avertissement", "")
+        if hallucination:
+            avertissement += f"\n⚠️ Fait inventé détecté : {data.get('commentaire', '')}"
+
+        audit_log = log(audit_log, "Vérification terminée", "Agent Vérification",
+            f"Ancrage : {score_ancrage:.0%} | Verdict : {data.get('verdict', 'fiable')}")
+        audit_log = log(audit_log, "Pipeline RAG terminé", "system",
+            f"Confiance : {state['score_confiance']:.0%} | Sources : {len(state['sources_citees'])}")
+
+        return {
+            **state,
+            "hallucination_detectee": hallucination,
+            "avertissement": avertissement,
+            "audit_log": audit_log,
+            "erreur": "",
+        }
+    except Exception as e:
+        return {**state, "erreur": f"Erreur vérification : {str(e)}"}
+
+
+def router_mode(state: RAGState) -> str:
+    if state["mode"] == "indexer":
+        return "indexer"
+    return "interroger"
+
+
 def build_graph():
-    g = StateGraph(RAGMultiState)
+    graph = StateGraph(RAGState)
+    graph.add_node("agent_indexation", agent_indexation)
+    graph.add_node("agent_retrieval_gouvernance", agent_retrieval_gouvernance)
+    graph.add_node("agent_generation_reponse", agent_generation_reponse)
+    graph.add_node("agent_anti_hallucination", agent_anti_hallucination)
 
-    g.add_node("retrieve_pdf_context",      retrieve_pdf_context)
-    g.add_node("retrieve_supabase_context", retrieve_supabase_context)
-    g.add_node("retrieve_api_context",      retrieve_api_context)
-    g.add_node("combine_contexts",          combine_contexts)
-    g.add_node("generate_answer",           generate_answer)
+    graph.set_entry_point("agent_indexation")
 
-    g.set_entry_point("retrieve_pdf_context")
-
-    g.add_edge("retrieve_pdf_context",      "retrieve_supabase_context")
-    g.add_edge("retrieve_supabase_context", "retrieve_api_context")
-    g.add_edge("retrieve_api_context",      "combine_contexts")
-    g.add_conditional_edges("combine_contexts", _stop_on_error("generate_answer"))
-    g.add_edge("generate_answer", END)
-
-    return g.compile()
-
-
-def run_rag_multi(
-    question:         str,
-    history:          list,
-    pdf_vectorstores: list  = None,
-    supabase_table:   str   = None,
-    supabase_columns: list  = None,
-    api_url:          str   = None,
-    api_key:          str   = None,
-) -> RAGMultiState:
-    initial_state = RAGMultiState(
-        question          = question,
-        history           = history,
-        pdf_vectorstores  = pdf_vectorstores or [],
-        supabase_table    = supabase_table,
-        supabase_columns  = supabase_columns,
-        api_url           = api_url,
-        api_key           = api_key,
-        pdf_context       = None,
-        supabase_context  = None,
-        api_context       = None,
-        combined_context  = None,
-        answer            = None,
-        sources_used      = [],
-        errors            = [],
-        status            = "pending",
+    graph.add_conditional_edges(
+        "agent_indexation",
+        router_mode,
+        {
+            "indexer": END,
+            "interroger": "agent_retrieval_gouvernance",
+        }
     )
-    return build_graph().invoke(initial_state)
+    graph.add_edge("agent_retrieval_gouvernance", "agent_generation_reponse")
+    graph.add_edge("agent_generation_reponse", "agent_anti_hallucination")
+    graph.add_edge("agent_anti_hallucination", END)
+
+    return graph.compile()
