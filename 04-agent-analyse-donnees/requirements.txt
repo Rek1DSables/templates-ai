@@ -1,9 +1,0 @@
-anthropic
-langgraph
-streamlit
-python-dotenv
-pandas
-plotly
-fpdf2
-openpyxl
-xlrd

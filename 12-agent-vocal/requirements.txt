@@ -1,7 +1,0 @@
-anthropic
-langgraph
-streamlit
-python-dotenv
-openai
-requests
-gtts
