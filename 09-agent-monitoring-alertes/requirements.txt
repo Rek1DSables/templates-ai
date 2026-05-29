@@ -1,0 +1,10 @@
+anthropic
+langgraph
+streamlit
+python-dotenv
+supabase
+plotly
+pandas
+google-auth
+google-auth-oauthlib
+google-api-python-client
