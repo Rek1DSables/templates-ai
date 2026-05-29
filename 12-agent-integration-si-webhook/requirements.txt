@@ -1,0 +1,7 @@
+anthropic
+langgraph
+streamlit
+python-dotenv
+supabase
+requests
+pandas
