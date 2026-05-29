@@ -1,6 +1,37 @@
 # Templates AI Automation — Portfolio Malt
 
-Collection de 12 agents IA production-ready, construits avec LangGraph et Claude API. Chaque template cible un cas d'usage business à fort ROI, peu couvert par les solutions no-code ou les SaaS existants.
+Collection de 12 agents IA production-ready, positionnés sur les niches à forte demande et faible offre en 2026. Chaque template cible un cas d'usage business à fort ROI, inaccessible aux solutions no-code ou aux SaaS génériques.
+
+---
+
+## Positionnement
+
+Cette collection cible les 3 niveaux qui justifient 800€+/jour :
+
+- **Agents verticaux spécialisés** — logique métier encodée, domaines régulés, forte barrière à l'entrée
+- **Architectures multi-agents** — orchestration LangGraph, mémoire partagée, gestion des conflits
+- **Gouvernance enterprise** — audit trail horodaté, permissions, conformité réglementaire
+
+Ce que les SaaS et le no-code ne font pas : intégration profonde dans le SI existant, audit trail pour conformité, logique métier custom, gouvernance des données sensibles.
+
+---
+
+## Templates
+
+| # | Nom | Cas d'usage | Niveau marché |
+|---|-----|-------------|---------------|
+| 01 | Agent Workflow B2B | Email → CRM lookup → Classification → Ticket → Réponse → Gmail | 🔴 Expert |
+| 02 | Agent EU AI Act Compliance | Audit conformité EU AI Act — classification, gaps, plan remédiation, audit trail | 🔴 Expert |
+| 03 | Agent Finance Close | Clôture financière multi-agents — réconciliation, variances, journal entries, disclosure | 🔴 Expert |
+| 04 | Agent SDR / Revenue | Enrichissement → Scoring ICP → Séquence 3 emails → Envoi Gmail | 🔴 Expert |
+| 05 | Agent Data Analyst Autonome | Question langage naturel → SQL → Exécution → Insights → Commentaire exécutif | 🔴 Expert |
+| 06 | Agent RAG Enterprise | Base de connaissance privée avec gouvernance, permissions, anti-hallucination, audit trail | 🔴 Expert |
+| 07 | Agent Analyse Documentaire | Extraction structurée → Vérification risques → Synthèse → Matrice risques → PDF | 🔴 Expert |
+| 08 | Agent Due Diligence M&A | Analyse multi-axes → Scoring → Matrice risques → Verdict → Fourchette valorisation | 🔴 Expert |
+| 09 | Agent Monitoring & Alertes | Détection violations → Analyse causale → Alertes graduées → Gmail → Supabase | 🔴 Expert |
+| 10 | Agent Pipeline Contractuel | Extraction clauses → Analyse risques → Synthèse → Génération contrat amélioré | 🔴 Expert |
+| 11 | Agent Évaluation Qualité LLM | Tests → Scoring 7 dimensions → Régressions → Badge déployabilité → Rapport | 🔴 Expert |
+| 12 | Agent Intégration SI & Webhook | Réception → Validation → Mapping → Retry → Dead Letter → Multi-destinations | 🔴 Expert |
 
 ---
 
@@ -11,29 +42,11 @@ Collection de 12 agents IA production-ready, construits avec LangGraph et Claude
 - **Interface** : Streamlit
 - **Base de données** : Supabase (PostgreSQL)
 - **Emails** : Gmail API (OAuth2)
-- **Audio** : Whisper (OpenAI), ElevenLabs
+- **Recherche web** : Serper
+- **Embeddings** : Sentence Transformers (multilingue)
 - **Data** : Pandas, Plotly
 - **PDF** : FPDF2, PyMuPDF
-- **Recherche** : Serper, BeautifulSoup
-
----
-
-## Templates
-
-| # | Nom | Cas d'usage | Niveau |
-|---|-----|-------------|--------|
-| 01 | Lead Qualifier | Scoring et qualification automatique des leads entrants | Intermédiaire |
-| 02 | Agent EU AI Act Compliance | Audit de conformité EU AI Act — classification, gaps, plan de remédiation, audit trail | Expert |
-| 03 | Agent Finance Close | Clôture financière multi-agents — réconciliation, variances, journal entries, disclosure | Expert |
-| 04 | Agent Analyse de Données | Upload CSV/Excel → insights IA → visualisations → rapport PDF | Avancé |
-| 05 | Agent Email Entrant | Classification, réponse automatique et routing des emails entrants | Avancé |
-| 06 | RAG Multi-Sources | Base de connaissance multi-documents avec retrieval augmenté | Expert |
-| 07 | Agent Email en Masse | Génération d'emails ultra-personnalisés par contact + envoi Gmail | Avancé |
-| 08 | Agent Due Diligence | Analyse M&A multi-axes — risques, scoring, matrice, verdict | Expert |
-| 09 | Agent Scraping & Extraction | Extraction de données structurées depuis URLs ou texte brut | Avancé |
-| 10 | Pipeline Contractuel | Analyse + génération de contrats avec scoring risques | Expert |
-| 11 | Orchestrateur Multi-Agents | Pipeline multi-agents avec coordination et agrégation | Expert |
-| 12 | Agent Vocal | Agent vocal inbound — transcription, analyse, réponse | Expert |
+- **HTTP** : Requests (webhooks, APIs tierces)
 
 ---
 
@@ -41,43 +54,33 @@ Collection de 12 agents IA production-ready, construits avec LangGraph et Claude
 
 Chaque template utilise deux modèles selon la nature des nœuds :
 
-- **claude-haiku-4-5-20251001** — extraction, classification, JSON, analyse structurée
-- **claude-sonnet-4-6** — génération longue, rapports, recommandations, disclosure
-
----
-
-## Ce qui différencie cette collection
-
-Les templates no-code (Make, Zapier, n8n) couvrent les automatisations simples. Cette collection cible ce qu'ils ne font pas :
-
-- **Domaines régulés** : conformité EU AI Act, clôture financière IFRS/PCG, due diligence M&A
-- **Audit trail et gouvernance** : chaque décision agent est horodatée et traçable
-- **Multi-agents coordonnés** : plusieurs agents spécialisés qui collaborent sur un workflow complexe
-- **Personnalisation métier profonde** : logique business encodée, pas des templates génériques
+- **claude-haiku-4-5-20251001** — extraction, classification, validation, JSON, analyse structurée
+- **claude-sonnet-4-6** — génération longue, rapports, recommandations, synthèses
 
 ---
 
 ## Changer de provider LLM
 
-Par défaut : Anthropic Claude (RGPD, serveurs EU). Migration en 3 étapes :
+Par défaut : Anthropic Claude (RGPD, serveurs EU).
+
+| Provider | Modèle | Coût vs Claude | Remarque |
+|----------|--------|----------------|----------|
+| Anthropic (défaut) | claude-haiku-4-5 | référence | RGPD, serveurs EU |
+| DeepSeek | deepseek-chat | ~10x moins cher | Serveurs Chine |
+| Mistral | mistral-small | ~3x moins cher | Serveurs EU, RGPD |
+| OpenAI | gpt-4o-mini | ~2x moins cher | Serveurs US |
+
+Migration en 3 étapes :
 
 ```bash
-pip install openai  # compatible DeepSeek, OpenAI, Mistral
+pip install openai
 ```
 
 Dans `config.py` :
 ```python
-# DeepSeek (~10x moins cher, serveurs Chine)
 LLM_BASE_URL = "https://api.deepseek.com"
 LLM_MODEL = "deepseek-chat"
-
-# Mistral (~3x moins cher, serveurs EU)
-LLM_BASE_URL = "https://api.mistral.ai/v1"
-LLM_MODEL = "mistral-small-latest"
-
-# OpenAI (~2x moins cher, serveurs US)
-LLM_BASE_URL = "https://api.openai.com/v1"
-LLM_MODEL = "gpt-4o-mini"
+LLM_API_KEY = "sk-..."
 ```
 
 Dans `graph.py` :
@@ -90,16 +93,22 @@ client = OpenAI(api_key=LLM_API_KEY, base_url=LLM_BASE_URL)
 
 ## Estimation des coûts API
 
-Avec Anthropic Claude Haiku + Sonnet (provider par défaut) :
+Avec Anthropic Claude Haiku + Sonnet :
 
 | Template | Usage léger | Usage moyen | Usage intensif |
 |----------|-------------|-------------|----------------|
-| 02 — EU AI Act | ~3€ | ~12€ | ~35€ |
-| 03 — Finance Close | ~4€ | ~15€ | ~45€ |
-| 04 — Analyse Données | ~1€ | ~5€ | ~15€ |
-| 07 — Email en Masse | ~3€ | ~10€ | ~30€ |
+| 01 — Workflow B2B | ~2€ | ~8€ | ~25€ |
+| 02 — EU AI Act | ~4€ | ~15€ | ~45€ |
+| 03 — Finance Close | ~5€ | ~18€ | ~55€ |
+| 04 — SDR Revenue | ~3€ | ~12€ | ~35€ |
+| 05 — Data Analyst | ~2€ | ~7€ | ~20€ |
+| 06 — RAG Enterprise | ~3€ | ~10€ | ~30€ |
+| 07 — Analyse Doc | ~4€ | ~14€ | ~42€ |
 | 08 — Due Diligence | ~5€ | ~18€ | ~55€ |
-| 10 — Pipeline Contractuel | ~3€ | ~10€ | ~30€ |
+| 09 — Monitoring | ~2€ | ~8€ | ~24€ |
+| 10 — Contractuel | ~3€ | ~12€ | ~36€ |
+| 11 — Évaluation LLM | ~2€ | ~8€ | ~24€ |
+| 12 — Intégration SI | ~2€ | ~7€ | ~20€ |
 
 Avec DeepSeek : diviser par 8 à 10. Avec Mistral Small : diviser par 3.
 
@@ -107,25 +116,43 @@ Avec DeepSeek : diviser par 8 à 10. Avec Mistral Small : diviser par 3.
 
 ## Pipelines clients typiques
 
-**Pipeline commercial complet**
+**Pipeline commercial B2B complet**
 ```
-01 — Lead Qualifier → 07 — Email en Masse → 10 — Pipeline Contractuel
+04 — SDR Revenue → 01 — Workflow B2B → 10 — Pipeline Contractuel
 ```
+Scraper les prospects → qualifier → traiter les réponses → générer le contrat
 
-**Pipeline conformité IA**
+---
+
+**Pipeline conformité IA (deadline août 2026)**
 ```
-02 — EU AI Act Compliance → 11 — Orchestrateur Multi-Agents
+02 — EU AI Act Compliance → 11 — Évaluation Qualité LLM
 ```
+Auditer les systèmes IA → valider la qualité avant déploiement
+
+---
 
 **Pipeline M&A / investissement**
 ```
-09 — Scraping & Extraction → 08 — Due Diligence → 10 — Pipeline Contractuel
+07 — Analyse Documentaire → 08 — Due Diligence → 10 — Pipeline Contractuel
 ```
+Analyser les documents → due diligence → générer les accords
 
-**Pipeline finance**
+---
+
+**Pipeline finance enterprise**
 ```
-04 — Analyse Données → 03 — Finance Close
+05 — Data Analyst → 03 — Finance Close → 09 — Monitoring
 ```
+Analyser les données → clôturer → monitorer en continu
+
+---
+
+**Pipeline SI & données**
+```
+12 — Intégration SI → 06 — RAG Enterprise → 05 — Data Analyst
+```
+Ingérer les événements → enrichir la base de connaissance → analyser
 
 ---
 
@@ -134,7 +161,7 @@ Avec DeepSeek : diviser par 8 à 10. Avec Mistral Small : diviser par 3.
 **Streamlit Cloud (gratuit)**
 ```bash
 # Connecter sur share.streamlit.io
-# Configurer secrets : ANTHROPIC_API_KEY, SUPABASE_URL, SUPABASE_KEY
+# Secrets : ANTHROPIC_API_KEY, SUPABASE_URL, SUPABASE_KEY
 ```
 
 **Railway**
@@ -164,25 +191,25 @@ pip install -r requirements.txt
 streamlit run app.py
 ```
 
-Chaque template contient un `.env` à configurer et un `README.md` avec instructions, données de test et SQL Supabase si nécessaire.
+Chaque template contient un `.env` à configurer et un `README.md` avec instructions complètes et données de test.
 
 ---
 
-## Prérequis
+## Prérequis communs
 
 - Python 3.10+
 - Clé API Anthropic
-- Compte Supabase (templates avec base de données)
-- Compte Gmail + credentials OAuth2 (templates email)
-- Clé Serper (templates avec recherche web)
+- Compte Supabase (templates avec persistance)
+- Compte Gmail + credentials OAuth2 (templates avec email)
+- Clé Serper (template SDR avec enrichissement web)
 
 ---
 
-## Positionnement
+## Disponible sur Malt
 
-Agents IA production-ready développés par un consultant AI Automation freelance spécialisé LangGraph / Claude API / MCP Protocol.
+Consultant AI Automation freelance spécialisé dans la conception et le déploiement d'agents IA sur mesure.
 
-**Disponible sur Malt** pour missions de développement d'agents IA sur mesure, pipelines d'automatisation métier et intégrations Claude API.
+Stack : LangGraph · Claude API · MCP Protocol · Supabase · Streamlit · LangGraph multi-agents
 
 ---
 
