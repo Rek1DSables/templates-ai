@@ -1,32 +1,39 @@
 # graph.py
 import time
 import json
-import base64
+import sqlite3
 import anthropic
 from langgraph.graph import StateGraph, END
 from typing import TypedDict
 from config import (
-    MODEL_NAME, ANTHROPIC_API_KEY,
-    GMAIL_CREDENTIALS_FILE, GMAIL_TOKEN_FILE, GMAIL_SCOPES,
-    MAX_RETRIES, RETRY_DELAY, NB_EMAILS_MAX
+    MODEL_NAME, MODEL_SONNET, ANTHROPIC_API_KEY,
+    MAX_RETRIES, RETRY_DELAY,
+    SQL_DEMO_SCHEMA, SQL_DEMO_DATA, DB_URL
 )
 
 client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
 
 
-class EmailState(TypedDict):
-    emails_bruts: list
-    emails_traites: list
-    mode_demo: bool
-    repondre_auto: bool
+class DataAnalystState(TypedDict):
+    question: str
+    schema_info: str
+    sql_genere: str
+    sql_valide: bool
+    resultats_bruts: list
+    nb_resultats: int
+    analyse: str
+    visualisation_config: dict
+    commentaire_executif: str
+    audit_log: list
     erreur: str
 
 
-def invoke_with_retry(messages: list, system: str, max_tokens: int = 2000) -> str:
+def invoke_with_retry(messages: list, system: str, max_tokens: int = 1000, model: str = None) -> str:
+    m = model or MODEL_NAME
     for attempt in range(MAX_RETRIES):
         try:
             response = client.messages.create(
-                model=MODEL_NAME,
+                model=m,
                 max_tokens=max_tokens,
                 system=system,
                 messages=messages,
@@ -34,241 +41,277 @@ def invoke_with_retry(messages: list, system: str, max_tokens: int = 2000) -> st
             return response.content[0].text
         except anthropic.APIStatusError as e:
             if "overloaded" in str(e).lower() and attempt < MAX_RETRIES - 1:
-                print(f"[Retry {attempt + 1}/{MAX_RETRIES}] Modele surcharge, attente {RETRY_DELAY}s...")
                 time.sleep(RETRY_DELAY)
             else:
                 raise
 
 
-def get_gmail_service():
-    from google.oauth2.credentials import Credentials
-    from google_auth_oauthlib.flow import InstalledAppFlow
-    from googleapiclient.discovery import build
-    from google.auth.transport.requests import Request
-    import os
-
-    creds = None
-    if os.path.exists(GMAIL_TOKEN_FILE):
-        creds = Credentials.from_authorized_user_file(GMAIL_TOKEN_FILE, GMAIL_SCOPES)
-
-    if not creds or not creds.valid:
-        if creds and creds.expired and creds.refresh_token:
-            creds.refresh(Request())
-        else:
-            flow = InstalledAppFlow.from_client_secrets_file(GMAIL_CREDENTIALS_FILE, GMAIL_SCOPES)
-            creds = flow.run_local_server(port=0)
-        with open(GMAIL_TOKEN_FILE, "w") as token:
-            token.write(creds.to_json())
-
-    return build("gmail", "v1", credentials=creds)
+def log(audit_log: list, etape: str, agent: str, detail: str = "") -> list:
+    audit_log.append({
+        "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S"),
+        "etape": etape,
+        "agent": agent,
+        "detail": detail,
+    })
+    return audit_log
 
 
-def collecter_emails(state: EmailState) -> EmailState:
+def init_demo_db():
+    """Initialise la base SQLite de demo."""
+    conn = sqlite3.connect(DB_URL)
+    conn.executescript(SQL_DEMO_SCHEMA)
+    conn.executescript(SQL_DEMO_DATA)
+    conn.commit()
+    conn.close()
+
+
+def get_schema_info() -> str:
+    """Récupère le schéma de la base de données."""
     try:
-        if state["mode_demo"]:
-            emails_demo = [
-                {
-                    "id": "demo_001",
-                    "expediteur": "marie.dupont@acme.com",
-                    "sujet": "Problème urgent avec mon compte - impossible de me connecter",
-                    "corps": "Bonjour, depuis ce matin je n'arrive plus à me connecter à votre plateforme. J'ai un message d'erreur 403. C'est bloquant pour mon équipe. Merci de traiter en urgence.",
-                    "date": "2026-06-01 09:15",
-                },
-                {
-                    "id": "demo_002",
-                    "expediteur": "jean.martin@startup.fr",
-                    "sujet": "Demande de démo et tarifs pour 50 utilisateurs",
-                    "corps": "Bonjour, nous sommes une startup de 50 personnes et nous cherchons une solution d'automatisation IA. Pourriez-vous nous envoyer vos tarifs et organiser une démonstration la semaine prochaine ?",
-                    "date": "2026-06-01 10:30",
-                },
-                {
-                    "id": "demo_003",
-                    "expediteur": "contact@investpartners.com",
-                    "sujet": "Opportunité de partenariat stratégique",
-                    "corps": "Bonjour, nous représentons un fonds d'investissement spécialisé dans les solutions IA B2B. Votre solution nous intéresse pour un partenariat de distribution. Disponible pour un appel cette semaine ?",
-                    "date": "2026-06-01 11:00",
-                },
-                {
-                    "id": "demo_004",
-                    "expediteur": "reclamation@client-mécontent.fr",
-                    "sujet": "RÉCLAMATION FORMELLE - Facturation incorrecte",
-                    "corps": "Bonjour, j'ai été facturé deux fois le mois dernier pour un montant total de 800 EUR. Je demande le remboursement immédiat et des explications. Si ce n'est pas réglé sous 48h je contacte ma banque.",
-                    "date": "2026-06-01 11:45",
-                },
-                {
-                    "id": "demo_005",
-                    "expediteur": "noreply@newsletter-promo.com",
-                    "sujet": "🎉 Offre spéciale - 70% de réduction aujourd'hui seulement!!!",
-                    "corps": "Cliquez ici pour profiter de notre offre exceptionnelle. Produits premium à prix cassés. Livraison gratuite. Offre valable 24h seulement.",
-                    "date": "2026-06-01 12:00",
-                },
-            ]
-            return {**state, "emails_bruts": emails_demo, "erreur": ""}
+        conn = sqlite3.connect(DB_URL)
+        cursor = conn.cursor()
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
+        tables = cursor.fetchall()
 
-        service = get_gmail_service()
-        results = service.users().messages().list(
-            userId="me",
-            labelIds=["INBOX"],
-            q="is:unread",
-            maxResults=NB_EMAILS_MAX,
-        ).execute()
+        schema = []
+        for (table_name,) in tables:
+            cursor.execute(f"PRAGMA table_info({table_name})")
+            columns = cursor.fetchall()
+            cols_str = ", ".join([f"{c[1]} ({c[2]})" for c in columns])
+            cursor.execute(f"SELECT COUNT(*) FROM {table_name}")
+            count = cursor.fetchone()[0]
+            schema.append(f"TABLE {table_name} ({count} lignes) : {cols_str}")
 
-        messages = results.get("messages", [])
-        emails = []
-
-        for msg in messages:
-            msg_data = service.users().messages().get(
-                userId="me",
-                id=msg["id"],
-                format="full",
-            ).execute()
-
-            headers = msg_data["payload"].get("headers", [])
-            sujet = next((h["value"] for h in headers if h["name"] == "Subject"), "Sans objet")
-            expediteur = next((h["value"] for h in headers if h["name"] == "From"), "Inconnu")
-            date = next((h["value"] for h in headers if h["name"] == "Date"), "")
-
-            corps = ""
-            payload = msg_data.get("payload", {})
-            if payload.get("body", {}).get("data"):
-                corps = base64.urlsafe_b64decode(payload["body"]["data"]).decode("utf-8", errors="ignore")
-            elif payload.get("parts"):
-                for part in payload["parts"]:
-                    if part.get("mimeType") == "text/plain" and part.get("body", {}).get("data"):
-                        corps = base64.urlsafe_b64decode(part["body"]["data"]).decode("utf-8", errors="ignore")
-                        break
-
-            emails.append({
-                "id": msg["id"],
-                "expediteur": expediteur,
-                "sujet": sujet,
-                "corps": corps[:1000],
-                "date": date,
-            })
-
-        return {**state, "emails_bruts": emails, "erreur": ""}
+        conn.close()
+        return "\n".join(schema)
     except Exception as e:
-        return {**state, "emails_bruts": [], "erreur": f"Erreur collecte : {str(e)}"}
+        return f"Erreur schema : {str(e)}"
 
 
-def traiter_emails(state: EmailState) -> EmailState:
+def agent_text_to_sql(state: DataAnalystState) -> DataAnalystState:
+    """Traduit la question en SQL valide."""
     try:
-        emails_traites = []
+        audit_log = log(state.get("audit_log", []), "Text-to-SQL", "Agent SQL",
+            f"Question : {state['question'][:80]}")
 
-        system = """Tu es un assistant expert en gestion d'emails professionnels.
-Tu analyses les emails et fournis une classification et une reponse appropriee.
+        system = """Tu es un expert SQL et data analyst.
+Tu traduis des questions en langage naturel en requetes SQL SQLite valides.
 Tu reponds UNIQUEMENT avec un JSON valide sans backticks :
 {
-  "categorie": "Support client",
-  "priorite": "urgente",
-  "sentiment": "negatif",
-  "resume": "resume en 1 phrase",
-  "action_recommandee": "action a prendre",
-  "reponse_suggeree": "reponse complete et professionnelle"
+  "sql": "SELECT ... FROM ... WHERE ... GROUP BY ... ORDER BY ... LIMIT ...",
+  "explication": "Ce que fait la requete en 1 phrase",
+  "type_viz": "bar|line|pie|table|scatter",
+  "axe_x": "colonne pour axe X",
+  "axe_y": "colonne pour axe Y"
 }"""
 
-        for email in state["emails_bruts"]:
-            prompt = f"""Analyse cet email et genere une reponse professionnelle :
+        prompt = f"""Traduis cette question en SQL SQLite :
 
-DE : {email['expediteur']}
-SUJET : {email['sujet']}
-DATE : {email['date']}
-CORPS :
-{email['corps'][:800]}
+QUESTION : {state['question']}
 
-Categories possibles : Support client, Demande commerciale, Reclamation, Partenariat, Candidature, Spam, Autre
-Priorites possibles : urgente, haute, normale, basse
-Sentiments possibles : positif, neutre, negatif
+SCHEMA DE LA BASE :
+{state['schema_info']}
 
-Reponds uniquement avec le JSON."""
+Regles :
+- SQL SQLite valide uniquement
+- Pas de WITH RECURSIVE
+- LIMIT 50 maximum
+- Aliases clairs sur toutes les colonnes calculees
+- ORDER BY pertinent
+JSON uniquement."""
 
-            reponse = invoke_with_retry(
+        reponse = invoke_with_retry(system=system, messages=[{"role": "user", "content": prompt}], max_tokens=600)
+
+        reponse_clean = reponse.strip()
+        start = reponse_clean.find("{")
+        end = reponse_clean.rfind("}") + 1
+        if start >= 0 and end > start:
+            reponse_clean = reponse_clean[start:end]
+
+        data = json.loads(reponse_clean)
+        sql = data.get("sql", "")
+
+        audit_log = log(audit_log, "SQL généré", "Agent SQL", sql[:100])
+
+        return {
+            **state,
+            "sql_genere": sql,
+            "sql_valide": bool(sql),
+            "visualisation_config": {
+                "type": data.get("type_viz", "table"),
+                "axe_x": data.get("axe_x", ""),
+                "axe_y": data.get("axe_y", ""),
+                "explication": data.get("explication", ""),
+            },
+            "audit_log": audit_log,
+            "erreur": "",
+        }
+    except Exception as e:
+        return {**state, "sql_genere": "", "sql_valide": False, "erreur": f"Erreur SQL : {str(e)}"}
+
+
+def agent_execution_validation(state: DataAnalystState) -> DataAnalystState:
+    """Exécute le SQL et valide les résultats."""
+    try:
+        audit_log = log(state.get("audit_log", []), "Exécution SQL", "Agent Validation",
+            f"SQL : {state['sql_genere'][:80]}")
+
+        if not state["sql_genere"]:
+            return {**state, "erreur": "Pas de SQL à exécuter"}
+
+        conn = sqlite3.connect(DB_URL)
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+
+        try:
+            cursor.execute(state["sql_genere"])
+            rows = cursor.fetchall()
+            resultats = [dict(row) for row in rows]
+            conn.close()
+        except sqlite3.Error as e:
+            conn.close()
+            # Retry avec correction
+            audit_log = log(audit_log, "Erreur SQL — tentative correction", "Agent Validation", str(e))
+
+            system = """Tu es un expert SQL SQLite.
+Tu corriges une requete SQL qui a echoue.
+Reponds UNIQUEMENT avec le SQL corrige, rien d autre."""
+
+            prompt = f"""Corrige cette requete SQL SQLite :
+
+REQUETE ORIGINALE :
+{state['sql_genere']}
+
+ERREUR :
+{str(e)}
+
+SCHEMA :
+{state['schema_info']}
+
+Reponds uniquement avec le SQL corrige."""
+
+            sql_corrige = invoke_with_retry(
                 system=system,
                 messages=[{"role": "user", "content": prompt}],
-                max_tokens=1000,
+                max_tokens=400,
             )
+            sql_corrige = sql_corrige.strip()
 
-            reponse_clean = reponse.strip()
-            if reponse_clean.startswith("```"):
-                reponse_clean = reponse_clean.split("```")[1]
-                if reponse_clean.startswith("json"):
-                    reponse_clean = reponse_clean[4:]
-            reponse_clean = reponse_clean.strip()
+            conn2 = sqlite3.connect(DB_URL)
+            conn2.row_factory = sqlite3.Row
+            cursor2 = conn2.cursor()
+            cursor2.execute(sql_corrige)
+            rows = cursor2.fetchall()
+            resultats = [dict(row) for row in rows]
+            conn2.close()
 
-            try:
-                data = json.loads(reponse_clean)
-            except Exception:
-                data = {
-                    "categorie": "Autre",
-                    "priorite": "normale",
-                    "sentiment": "neutre",
-                    "resume": "Analyse indisponible",
-                    "action_recommandee": "Traitement manuel requis",
-                    "reponse_suggeree": "",
-                }
+            state = {**state, "sql_genere": sql_corrige}
 
-            emails_traites.append({
-                **email,
-                **data,
-            })
+        audit_log = log(audit_log, "Exécution réussie", "Agent Validation",
+            f"{len(resultats)} lignes retournées")
 
-        return {**state, "emails_traites": emails_traites, "erreur": ""}
+        return {
+            **state,
+            "resultats_bruts": resultats,
+            "nb_resultats": len(resultats),
+            "audit_log": audit_log,
+            "erreur": "",
+        }
     except Exception as e:
-        return {**state, "emails_traites": [], "erreur": f"Erreur traitement : {str(e)}"}
+        return {**state, "resultats_bruts": [], "nb_resultats": 0, "erreur": f"Erreur exécution : {str(e)}"}
 
 
-def envoyer_reponses(state: EmailState) -> EmailState:
+def agent_analyse_insights(state: DataAnalystState) -> DataAnalystState:
+    """Analyse les résultats et génère des insights."""
     try:
-        if not state["repondre_auto"] or state["mode_demo"]:
-            return {**state, "erreur": ""}
+        audit_log = log(state.get("audit_log", []), "Analyse insights", "Agent Analyse")
 
-        service = get_gmail_service()
+        if not state["resultats_bruts"]:
+            return {**state, "analyse": "Aucun résultat à analyser.", "erreur": ""}
 
-        for email in state["emails_traites"]:
-            if email.get("categorie") == "Spam":
-                continue
-            if not email.get("reponse_suggeree"):
-                continue
+        system = """Tu es un data analyst senior et consultant business.
+Tu analyses des donnees et generes des insights actionnables en francais professionnel.
+Tu termines TOUJOURS avant de t arreter."""
 
-            from email.mime.text import MIMEText
-            message = MIMEText(email["reponse_suggeree"], "plain", "utf-8")
-            message["to"] = email["expediteur"]
-            message["subject"] = f"Re: {email['sujet']}"
+        resultats_str = json.dumps(state["resultats_bruts"][:20], ensure_ascii=False, indent=2)
 
-            raw = base64.urlsafe_b64encode(message.as_bytes()).decode()
+        prompt = f"""Analyse ces resultats de donnees :
 
-            service.users().messages().send(
-                userId="me",
-                body={"raw": raw},
-            ).execute()
+QUESTION POSEE : {state['question']}
+NOMBRE DE LIGNES : {state['nb_resultats']}
 
-        return {**state, "erreur": ""}
+DONNEES :
+{resultats_str}
+
+Redige une analyse concise (150 mots max) :
+1. OBSERVATION PRINCIPALE : chiffre cle le plus important
+2. TENDANCES : 2-3 patterns identifies
+3. ANOMALIES : points atypiques si present
+4. RECOMMANDATION : 1 action concrete
+
+Termine la recommandation."""
+
+        analyse = invoke_with_retry(
+            system=system,
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=500,
+            model=MODEL_SONNET,
+        )
+
+        audit_log = log(audit_log, "Analyse terminée", "Agent Analyse", f"{len(analyse)} caractères")
+
+        return {**state, "analyse": analyse, "audit_log": audit_log, "erreur": ""}
     except Exception as e:
-        return {**state, "erreur": f"Erreur envoi : {str(e)}"}
+        return {**state, "erreur": f"Erreur analyse : {str(e)}"}
 
 
-def router(state: EmailState) -> str:
-    if state["repondre_auto"] and not state["mode_demo"]:
-        return "envoyer"
-    return "fin"
+def agent_commentaire_executif(state: DataAnalystState) -> DataAnalystState:
+    """Génère un commentaire exécutif synthétique."""
+    try:
+        audit_log = log(state.get("audit_log", []), "Commentaire exécutif", "Agent Executive")
+
+        system = """Tu es un consultant business senior.
+Tu rediges des commentaires executifs synthetiques en francais.
+Tu termines TOUJOURS avant de t arreter."""
+
+        prompt = f"""Redige un commentaire executif en 3 phrases maximum :
+
+QUESTION : {state['question']}
+ANALYSE : {state['analyse'][:400]}
+
+Format :
+- Phrase 1 : constat principal chiffre
+- Phrase 2 : implication business
+- Phrase 3 : recommandation immediate
+
+3 phrases maximum. Termine la 3eme phrase."""
+
+        commentaire = invoke_with_retry(
+            system=system,
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=200,
+            model=MODEL_SONNET,
+        )
+
+        audit_log = log(audit_log, "Pipeline terminé", "system",
+            f"Question traitée en {len(state['audit_log'])} étapes")
+
+        return {**state, "commentaire_executif": commentaire, "audit_log": audit_log, "erreur": ""}
+    except Exception as e:
+        return {**state, "erreur": f"Erreur commentaire : {str(e)}"}
 
 
 def build_graph():
-    graph = StateGraph(EmailState)
-    graph.add_node("collecter_emails", collecter_emails)
-    graph.add_node("traiter_emails", traiter_emails)
-    graph.add_node("envoyer_reponses", envoyer_reponses)
+    graph = StateGraph(DataAnalystState)
+    graph.add_node("agent_text_to_sql", agent_text_to_sql)
+    graph.add_node("agent_execution_validation", agent_execution_validation)
+    graph.add_node("agent_analyse_insights", agent_analyse_insights)
+    graph.add_node("agent_commentaire_executif", agent_commentaire_executif)
 
-    graph.set_entry_point("collecter_emails")
-    graph.add_edge("collecter_emails", "traiter_emails")
-    graph.add_conditional_edges(
-        "traiter_emails",
-        router,
-        {
-            "envoyer": "envoyer_reponses",
-            "fin": END,
-        }
-    )
-    graph.add_edge("envoyer_reponses", END)
+    graph.set_entry_point("agent_text_to_sql")
+    graph.add_edge("agent_text_to_sql", "agent_execution_validation")
+    graph.add_edge("agent_execution_validation", "agent_analyse_insights")
+    graph.add_edge("agent_analyse_insights", "agent_commentaire_executif")
+    graph.add_edge("agent_commentaire_executif", END)
 
     return graph.compile()

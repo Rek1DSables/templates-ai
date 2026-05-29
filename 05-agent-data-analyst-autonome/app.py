@@ -1,35 +1,69 @@
 # app.py
+import json
 import streamlit as st
-from graph import build_graph
-from config import CATEGORIES, PRIORITES
+import pandas as pd
+import plotly.express as px
+import plotly.graph_objects as go
+from graph import build_graph, init_demo_db, get_schema_info
+from config import EXEMPLES_QUESTIONS
 
 
-st.set_page_config(page_title="Agent Email Entrant", page_icon="📧", layout="centered")
-st.title("📧 Agent Email Entrant")
-st.caption("Collecte, classification, réponse automatique et routage des emails entrants")
+# Init DB demo
+init_demo_db()
 
-col1, col2 = st.columns(2)
+st.set_page_config(page_title="Agent Data Analyst Autonome", page_icon="🧠", layout="centered")
+st.title("🧠 Agent Data Analyst Autonome")
+st.caption("Posez une question en langage naturel → SQL généré → Exécution → Insights → Commentaire exécutif")
+
+with st.expander("📋 Architecture du pipeline"):
+    st.markdown("""
+**4 agents spécialisés en séquence :**
+1. **Agent Text-to-SQL** — traduit la question en SQL valide avec auto-correction
+2. **Agent Exécution & Validation** — exécute le SQL, retente si erreur
+3. **Agent Analyse Insights** — analyse les résultats, détecte tendances et anomalies
+4. **Agent Commentaire Exécutif** — synthèse en 3 phrases pour le management
+    """)
+
+with st.expander("🗄️ Schéma de la base de données"):
+    schema = get_schema_info()
+    st.code(schema, language="sql")
+
+st.divider()
+
+st.subheader("Posez votre question")
+
+col1, col2 = st.columns([3, 1])
 with col1:
-    mode_demo = st.toggle("Mode démo (sans Gmail réel)", value=True)
+    question = st.text_input(
+        "Question en langage naturel",
+        placeholder="Quel est le chiffre d'affaires total par région ?"
+    )
 with col2:
-    repondre_auto = st.toggle("Répondre automatiquement", value=False)
+    st.markdown("<br>", unsafe_allow_html=True)
+    exemple = st.selectbox("Exemples", [""] + EXEMPLES_QUESTIONS, label_visibility="collapsed")
 
-if not mode_demo:
-    st.info("Mode Gmail réel — les emails non lus de ta boîte seront traités.")
-    st.warning("Assure-toi que credentials.json et token.json sont présents.")
+if exemple and not question:
+    question = exemple
 
-if repondre_auto and not mode_demo:
-    st.warning("⚠️ Les réponses seront envoyées automatiquement depuis ta boîte Gmail.")
+if question:
+    st.info(f"**Question :** {question}")
 
-if st.button("Traiter les emails entrants", use_container_width=True):
-    with st.spinner("Collecte et analyse des emails en cours..."):
+if st.button("Analyser", use_container_width=True, disabled=not question):
+    with st.spinner("Pipeline data analyst en cours..."):
         try:
+            schema_info = get_schema_info()
             graph = build_graph()
             result = graph.invoke({
-                "emails_bruts": [],
-                "emails_traites": [],
-                "mode_demo": mode_demo,
-                "repondre_auto": repondre_auto,
+                "question": question,
+                "schema_info": schema_info,
+                "sql_genere": "",
+                "sql_valide": False,
+                "resultats_bruts": [],
+                "nb_resultats": 0,
+                "analyse": "",
+                "visualisation_config": {},
+                "commentaire_executif": "",
+                "audit_log": [],
                 "erreur": "",
             })
         except Exception as e:
@@ -37,56 +71,97 @@ if st.button("Traiter les emails entrants", use_container_width=True):
             st.stop()
 
     if result["erreur"]:
-        st.warning(result["erreur"])
+        st.error(result["erreur"])
+        st.stop()
 
-    emails = result["emails_traites"]
+    # Métriques
+    col1, col2, col3 = st.columns(3)
+    col1.metric("Résultats", result["nb_resultats"])
+    col2.metric("Type viz", result["visualisation_config"].get("type", "table").upper())
+    col3.metric("Étapes", len(result["audit_log"]))
 
-    if not emails:
-        st.info("Aucun email à traiter.")
-    else:
-        # Stats
-        nb_urgent = sum(1 for e in emails if e.get("priorite") == "urgente")
-        nb_spam = sum(1 for e in emails if e.get("categorie") == "Spam")
-        nb_traites = len(emails) - nb_spam
+    # Commentaire exécutif
+    if result["commentaire_executif"]:
+        st.success(f"💡 **Synthèse executive :** {result['commentaire_executif']}")
 
-        col1, col2, col3 = st.columns(3)
-        col1.metric("Emails traités", nb_traites)
-        col2.metric("Urgents", nb_urgent)
-        col3.metric("Spam détecté", nb_spam)
+    st.divider()
+
+    tab1, tab2, tab3, tab4 = st.tabs([
+        "Visualisation",
+        "Analyse détaillée",
+        "SQL & Données brutes",
+        "Audit Trail",
+    ])
+
+    with tab1:
+        df = pd.DataFrame(result["resultats_bruts"])
+        if df.empty:
+            st.warning("Aucun résultat.")
+        else:
+            viz_config = result["visualisation_config"]
+            viz_type = viz_config.get("type", "table")
+            axe_x = viz_config.get("axe_x", df.columns[0] if len(df.columns) > 0 else "")
+            axe_y = viz_config.get("axe_y", df.columns[1] if len(df.columns) > 1 else "")
+
+            # Vérifier que les colonnes existent
+            if axe_x not in df.columns:
+                axe_x = df.columns[0]
+            if axe_y not in df.columns and len(df.columns) > 1:
+                axe_y = df.columns[1]
+
+            try:
+                if viz_type == "bar" and axe_x and axe_y and axe_y in df.columns:
+                    fig = px.bar(df, x=axe_x, y=axe_y, title=question,
+                        color=axe_y, color_continuous_scale="Blues")
+                    st.plotly_chart(fig, use_container_width=True)
+
+                elif viz_type == "line" and axe_x and axe_y and axe_y in df.columns:
+                    fig = px.line(df, x=axe_x, y=axe_y, title=question, markers=True)
+                    st.plotly_chart(fig, use_container_width=True)
+
+                elif viz_type == "pie" and axe_x and axe_y and axe_y in df.columns:
+                    fig = px.pie(df, names=axe_x, values=axe_y, title=question)
+                    st.plotly_chart(fig, use_container_width=True)
+
+                elif viz_type == "scatter" and axe_x and axe_y and axe_y in df.columns:
+                    fig = px.scatter(df, x=axe_x, y=axe_y, title=question)
+                    st.plotly_chart(fig, use_container_width=True)
+
+                else:
+                    st.dataframe(df, use_container_width=True, hide_index=True)
+
+            except Exception:
+                st.dataframe(df, use_container_width=True, hide_index=True)
+
+    with tab2:
+        st.markdown(result["analyse"])
+
+    with tab3:
+        st.markdown("**SQL généré**")
+        st.code(result["sql_genere"], language="sql")
+        st.caption(f"Explication : {result['visualisation_config'].get('explication', '')}")
 
         st.divider()
+        st.markdown("**Données brutes**")
+        df_brut = pd.DataFrame(result["resultats_bruts"])
+        if not df_brut.empty:
+            st.dataframe(df_brut, use_container_width=True, hide_index=True)
+            st.download_button(
+                label="📊 Télécharger CSV",
+                data=df_brut.to_csv(index=False, encoding="utf-8"),
+                file_name="resultats.csv",
+                mime="text/csv",
+                use_container_width=True,
+            )
 
-        # Tri par priorité
-        ordre_priorite = {"urgente": 0, "haute": 1, "normale": 2, "basse": 3}
-        emails_tries = sorted(emails, key=lambda x: ordre_priorite.get(x.get("priorite", "normale"), 2))
+    with tab4:
+        for entry in result["audit_log"]:
+            st.markdown(f"✅ `{entry.get('timestamp')}` **{entry.get('agent')}** — {entry.get('etape')} {('| ' + entry.get('detail', '')) if entry.get('detail') else ''}")
 
-        for email in emails_tries:
-            priorite = email.get("priorite", "normale")
-            icone_priorite = PRIORITES.get(priorite, "🟡")
-            categorie = email.get("categorie", "Autre")
-            sentiment = email.get("sentiment", "neutre")
-            icone_sentiment = "😊" if sentiment == "positif" else "😠" if sentiment == "negatif" else "😐"
-
-            with st.expander(f"{icone_priorite} {email.get('sujet', 'Sans objet')} — {categorie}"):
-                col_a, col_b, col_c = st.columns(3)
-                col_a.markdown(f"**De :** {email.get('expediteur', '')}")
-                col_b.markdown(f"**Priorité :** {icone_priorite} {priorite.capitalize()}")
-                col_c.markdown(f"**Sentiment :** {icone_sentiment} {sentiment.capitalize()}")
-
-                st.markdown(f"**Résumé :** {email.get('resume', '')}")
-                st.markdown(f"**Action recommandée :** {email.get('action_recommandee', '')}")
-
-                if email.get("reponse_suggeree"):
-                    st.divider()
-                    st.markdown("**Réponse suggérée :**")
-                    st.text_area(
-                        label="",
-                        value=email.get("reponse_suggeree", ""),
-                        height=150,
-                        key=f"reponse_{email.get('id', '')}",
-                    )
-
-        if repondre_auto and not mode_demo:
-            st.success("Réponses envoyées automatiquement.")
-        elif mode_demo:
-            st.info("Mode démo — aucune réponse envoyée. Active le mode Gmail réel pour envoyer.")
+        st.download_button(
+            label="📦 Télécharger Audit Trail JSON",
+            data=json.dumps(result["audit_log"], ensure_ascii=False, indent=2),
+            file_name="audit_data_analyst.json",
+            mime="application/json",
+            use_container_width=True,
+        )
