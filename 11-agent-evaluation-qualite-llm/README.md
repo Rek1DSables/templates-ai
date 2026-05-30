@@ -1,51 +1,51 @@
-# 11 — Agent Évaluation Qualité LLM
+# 11 — LLM Quality Evaluation Agent
 
-Pipeline multi-agents d'évaluation de la qualité des LLM avant déploiement. 4 agents spécialisés : exécution des cas de test, scoring multi-dimensions, détection des régressions, rapport de déployabilité avec badge qualité.
+Multi-agent LLM quality evaluation pipeline before deployment. 4 specialized agents: test case execution, multi-dimension scoring, regression detection, deployability report with quality badge.
 
 ## Stack
 
-- **LangGraph** — orchestration séquentielle 4 agents
-- **Anthropic Claude Sonnet** — rapport et recommandations
-- **Anthropic Claude Haiku** — évaluation et scoring
-- **Plotly** — radar chart des scores par dimension
-- **Streamlit** — interface utilisateur
+- **LangGraph** — sequential orchestration 4 agents
+- **Anthropic Claude Sonnet** — report and recommendations
+- **Anthropic Claude Haiku** — evaluation and scoring
+- **Plotly** — radar chart of dimension scores
+- **Streamlit** — user interface
 
-## Architecture des agents
+## Agents
 
-| Agent | Rôle |
+| Agent | Role |
 |-------|------|
-| Agent Exécution | Exécute chaque cas de test sur le modèle évalué |
-| Agent Évaluation | Score chaque réponse sur 7 dimensions de qualité |
-| Agent Régression | Détecte hallucinations, toxicité, tests critiques échoués |
-| Agent Rapport | Rapport déployabilité avec badge qualité |
+| Execution | Executes each test case on the evaluated model |
+| Evaluation | Scores each response on 7 quality dimensions |
+| Regression | Detects hallucinations, toxicity, failed critical tests |
+| Report | Deployability report with quality badge |
 
-## Fonctionnalités
+## Features
 
-- 7 dimensions d'évaluation : fidélité, complétude, précision, hallucination, pertinence, cohérence, toxicité
-- 6 types de tests : unitaire, régression, adversarial, robustesse, charge, métier
-- Badge qualité automatique : 🟢 Production Ready / 🟡 Staging Only / 🟠 Dev Only / 🔴 Non déployable
-- Détection régressions bloquantes (hallucination, toxicité, tests critiques échoués, latence excessive)
-- Radar chart des scores par dimension
-- Rapport de déployabilité avec verdict Go / No-Go
-- 5 cas de test de démo inclus (unitaire, adversarial, métier, robustesse)
-- Compatible tous modèles Anthropic, OpenAI, DeepSeek, Mistral
-- Export rapport JSON + résultats CSV
-- Retry automatique (3 tentatives, 5s)
+- 7 evaluation dimensions: faithfulness, completeness, accuracy, hallucination, relevance, coherence, toxicity
+- 6 test types: unit, regression, adversarial, robustness, load, business
+- Automatic quality badge: 🟢 Production Ready / 🟡 Staging Only / 🟠 Dev Only / 🔴 Not Deployable
+- Blocking regression detection (hallucination, toxicity, failed critical tests, excessive latency)
+- Dimension score radar chart
+- Deployability report with Go / No-Go verdict
+- 5 demo test cases included (unit, adversarial, business, robustness)
+- Compatible with all models: Anthropic, OpenAI, DeepSeek, Mistral
+- Full JSON report + CSV results export
+- Retry automatic (3 attempts, 5s)
 
-## Cas d'usage
+## Use Cases
 
-- Valider un agent IA avant déploiement en production
-- Comparer deux versions d'un modèle ou d'un prompt
-- Détecter les régressions après mise à jour
-- Produire un rapport formel pour validation DSI / RSSI
+- Validate an AI agent before production deployment
+- Compare two versions of a model or prompt
+- Detect regressions after update
+- Produce a formal report for CTO / CISO validation
 
 ## Structure
 
 ```
 11-agent-evaluation-qualite-llm/
-├── app.py          # Interface Streamlit + radar chart
+├── app.py          # Streamlit interface + radar chart
 ├── graph.py        # LangGraph 4 agents
-├── config.py       # Dimensions, seuils, cas de test démo
+├── config.py       # Dimensions, thresholds, demo test cases
 ├── requirements.txt
 ├── .env
 └── README.md
@@ -58,17 +58,17 @@ pip install -r requirements.txt
 streamlit run app.py
 ```
 
-## Variables d'environnement
+## Environment Variables
 
 ```
-ANTHROPIC_API_KEY=ta_clé_ici
+ANTHROPIC_API_KEY=your_key
 ```
 
-## Test rapide
+## Quick Test
 
-Sélectionner "Cas de démo" + modèle `claude-haiku-4-5-20251001` + cliquer Lancer.
+Select "Demo cases" + model `claude-haiku-4-5-20251001` + click Launch.
 
-## Modèles utilisés
+## Models
 
-- `claude-haiku-4-5-20251001` — évaluation et scoring
-- `claude-sonnet-4-6` — rapport et recommandations
+- `claude-haiku-4-5-20251001` — evaluation and scoring
+- `claude-sonnet-4-6` — report and recommendations

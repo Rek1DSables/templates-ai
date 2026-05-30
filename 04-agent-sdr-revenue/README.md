@@ -1,52 +1,52 @@
-# 04 — Agent SDR / Revenue
+# 04 — SDR / Revenue Agent
 
-Pipeline multi-agents de prospection commerciale B2B autonome. 4 agents spécialisés : enrichissement web par prospect, scoring ICP, génération de séquence 3 emails personnalisés, envoi Gmail du premier email.
+Multi-agent autonomous B2B prospecting pipeline. 4 specialized agents: web enrichment per prospect, ICP scoring, personalized 3-email sequence generation, Gmail first email send.
 
 ## Stack
 
-- **LangGraph** — orchestration séquentielle 4 agents
-- **Anthropic Claude Sonnet** — génération séquences emails personnalisées
-- **Anthropic Claude Haiku** — scoring ICP et enrichissement
-- **Serper** — recherche web de signaux business par prospect
-- **Supabase** — CRM prospects et séquences
-- **Gmail API** — envoi premier email de la séquence
-- **Plotly** — visualisation scores ICP
-- **Streamlit** — interface utilisateur
+- **LangGraph** — sequential orchestration 4 agents
+- **Anthropic Claude Sonnet** — personalized email sequence generation
+- **Anthropic Claude Haiku** — ICP scoring and enrichment
+- **Serper** — web search for business signals per prospect
+- **Supabase** — prospects and sequences CRM
+- **Gmail API** — sequence first email send
+- **Plotly** — ICP score visualization
+- **Streamlit** — user interface
 
-## Architecture des agents
+## Agents
 
-| Agent | Rôle |
+| Agent | Role |
 |-------|------|
-| Agent Enrichissement | Recherche web (Serper) + qualification IA + signaux business |
-| Agent Scoring | Score ICP 0-100, segmentation hot/warm/cold, sauvegarde Supabase |
-| Agent Séquence | 3 emails personnalisés par prospect (hot + warm uniquement) |
-| Agent Envoi | Premier email via Gmail (optionnel) |
+| Enrichment | Web search (Serper) + AI qualification + business signals |
+| Scoring | ICP score 0-100, hot/warm/cold segmentation, Supabase save |
+| Sequence | 3 personalized emails per prospect (hot + warm only) |
+| Send | First email via Gmail (optional) |
 
-## Fonctionnalités
+## Features
 
-- Configuration ICP : secteurs, postes et tailles d'entreprise cibles
-- Enrichissement automatique via recherche web Serper par prospect
-- Scoring ICP 0-100 avec segmentation hot (75+) / warm (50-74) / cold (<50)
-- Détection de signaux business (levées de fonds, recrutements, actualités)
-- Séquence 3 emails : premier contact + relance J+5 + breakup J+12
-- Emails ultra-personnalisés selon segment, signaux et angle d'approche
-- Sauvegarde automatique prospects et séquences dans Supabase
-- Mode démo (5 prospects fictifs) ou upload CSV
-- Template CSV téléchargeable
-- Export prospects qualifiés CSV + pipeline complet JSON
-- Retry automatique (3 tentatives, 5s)
+- ICP configuration: target sectors, positions and company sizes
+- Automatic web enrichment via Serper per prospect
+- ICP scoring 0-100 with segmentation hot (75+) / warm (50-74) / cold (<50)
+- Business signals detection (fundraising, hiring, news)
+- 3-email sequence: first contact + follow-up D+5 + breakup D+12
+- Ultra-personalized emails based on segment, signals and approach angle
+- Automatic save of prospects and sequences in Supabase
+- Demo mode (5 fictional prospects) or CSV upload
+- Downloadable CSV template
+- Qualified prospects CSV + complete pipeline JSON export
+- Retry automatic (3 attempts, 5s)
 
 ## Structure
 
 ```
 04-agent-sdr-revenue/
-├── app.py              # Interface Streamlit + visualisations
+├── app.py              # Streamlit interface + visualizations
 ├── graph.py            # LangGraph 4 agents
 ├── config.py           # ICP, scoring, SQL setup
 ├── requirements.txt
 ├── .env
-├── credentials.json    # Gmail OAuth2 (non versionné)
-├── token.json          # Gmail token (non versionné)
+├── credentials.json    # Gmail OAuth2 (not versioned)
+├── token.json          # Gmail token (not versioned)
 └── README.md
 ```
 
@@ -57,25 +57,25 @@ pip install -r requirements.txt
 streamlit run app.py
 ```
 
-## Variables d'environnement
+## Environment Variables
 
 ```
-ANTHROPIC_API_KEY=ta_clé_ici
-SUPABASE_URL=ton_url_supabase
-SUPABASE_KEY=ta_clé_supabase
-SERPER_API_KEY=ta_clé_serper
+ANTHROPIC_API_KEY=your_key
+SUPABASE_URL=your_supabase_url
+SUPABASE_KEY=your_supabase_key
+SERPER_API_KEY=your_serper_key
 GMAIL_CREDENTIALS_FILE=credentials.json
 GMAIL_TOKEN_FILE=token.json
 ```
 
-## Gmail OAuth2
+## CSV Contact Format
 
-```powershell
-copy C:\Users\steph\projets-python\credentials.json .
-copy C:\Users\steph\projets-python\token.json .
+```csv
+nom,prenom,email,entreprise,poste,secteur,taille_entreprise,site_web
+Martin,Sophie,sophie@acme.com,Acme Corp,CEO,SaaS B2B,PME,acme.com
 ```
 
-## Modèles utilisés
+## Models
 
-- `claude-haiku-4-5-20251001` — scoring ICP et enrichissement
-- `claude-sonnet-4-6` — génération séquences emails
+- `claude-haiku-4-5-20251001` — ICP scoring and enrichment
+- `claude-sonnet-4-6` — email sequence generation

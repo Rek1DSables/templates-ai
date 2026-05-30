@@ -1,52 +1,52 @@
-# 05 — Agent Data Analyst Autonome
+# 05 — Autonomous Data Analyst Agent
 
-Pipeline multi-agents d'analyse de données en langage naturel. 4 agents spécialisés : traduction question → SQL avec auto-correction, exécution et validation, analyse insights, commentaire exécutif. Connecté à SQLite en démo, PostgreSQL/Supabase/BigQuery en production.
+Multi-agent data analysis pipeline in natural language. 4 specialized agents: question → SQL translation with auto-correction, execution and validation, insights analysis, executive commentary. Connected to SQLite in demo, PostgreSQL/Supabase/BigQuery in production.
 
 ## Stack
 
-- **LangGraph** — orchestration séquentielle 4 agents
-- **Anthropic Claude Sonnet** — analyse insights et commentaire exécutif
-- **Anthropic Claude Haiku** — génération SQL et auto-correction
-- **SQLite** — base de données démo (remplaçable par PostgreSQL/Supabase)
-- **Plotly** — visualisations automatiques (bar, line, pie, scatter)
-- **Streamlit** — interface utilisateur
+- **LangGraph** — sequential orchestration 4 agents
+- **Anthropic Claude Sonnet** — insights analysis and executive commentary
+- **Anthropic Claude Haiku** — SQL generation and auto-correction
+- **SQLite** — demo database (replaceable by PostgreSQL/Supabase)
+- **Plotly** — automatic visualizations (bar, line, pie, scatter)
+- **Streamlit** — user interface
 
-## Architecture des agents
+## Agents
 
-| Agent | Rôle |
+| Agent | Role |
 |-------|------|
-| Agent Text-to-SQL | Traduit la question en SQL valide, choisit le type de visualisation |
-| Agent Exécution & Validation | Exécute le SQL, auto-corrige si erreur, retente |
-| Agent Analyse Insights | Analyse résultats, détecte tendances et anomalies |
-| Agent Commentaire Exécutif | Synthèse en 3 phrases pour le management |
+| Text-to-SQL | Translates question to valid SQL, chooses visualization type |
+| Execution & Validation | Executes SQL, auto-corrects if error, retries |
+| Insights Analysis | Analyzes results, detects trends and anomalies |
+| Executive Commentary | 3-sentence synthesis for management |
 
-## Ce qui différencie cet agent d'un LLM classique
+## What Makes This Different From a Standard LLM
 
-- **Connecté à une vraie base SQL** — chiffres réels, pas inventés
-- **Auto-correction** — si le SQL plante, l'agent se corrige et retente
-- **Visualisation automatique** — choisit bar/line/pie/scatter selon la question
-- **Audit trail** — chaque requête tracée horodatée
-- **Production-ready** — connecter PostgreSQL, Supabase ou BigQuery en 2 lignes
+- **Connected to a real SQL database** — real figures, not hallucinated
+- **Auto-correction** — if SQL fails, the agent corrects and retries
+- **Automatic visualization** — chooses bar/line/pie/scatter based on the question
+- **Audit trail** — every query timestamped
+- **Production-ready** — connect PostgreSQL, Supabase or BigQuery in 2 lines
 
-## Fonctionnalités
+## Features
 
-- Questions en langage naturel sur n'importe quelle base SQL
-- Génération SQL avec explication et type de visualisation recommandé
-- Auto-correction SQL en cas d'erreur d'exécution
-- 8 exemples de questions pré-configurés
-- Base SQLite démo incluse (ventes + clients, 20 transactions)
-- Visualisations automatiques Plotly selon le type de données
-- Export CSV des résultats
-- Audit trail JSON complet
-- Retry automatique (3 tentatives, 5s)
+- Natural language questions on any SQL database
+- SQL generation with explanation and recommended visualization type
+- SQL auto-correction on execution error
+- 8 pre-configured example questions
+- Demo SQLite database included (sales + clients, 20 transactions)
+- Automatic Plotly visualizations based on data type
+- CSV results export
+- Full JSON audit trail
+- Retry automatic (3 attempts, 5s)
 
 ## Structure
 
 ```
 05-agent-data-analyst-autonome/
-├── app.py          # Interface Streamlit + visualisations
-├── graph.py        # LangGraph 4 agents + init DB
-├── config.py       # Schéma démo, exemples questions
+├── app.py          # Streamlit interface + visualizations
+├── graph.py        # LangGraph 4 agents + DB init
+├── config.py       # Demo schema, example questions
 ├── requirements.txt
 ├── .env
 └── README.md
@@ -59,34 +59,31 @@ pip install -r requirements.txt
 streamlit run app.py
 ```
 
-## Variables d'environnement
+## Environment Variables
 
 ```
-ANTHROPIC_API_KEY=ta_clé_ici
+ANTHROPIC_API_KEY=your_key
 DB_TYPE=sqlite
 DB_URL=demo.db
 ```
 
-## Connexion base de production
+## Connecting to Production Database
 
-Dans `graph.py`, remplacer `sqlite3.connect(DB_URL)` par :
+In `graph.py`, replace `sqlite3.connect(DB_URL)` with:
 ```python
 # PostgreSQL
 import psycopg2
 conn = psycopg2.connect(os.getenv("DATABASE_URL"))
-
-# Supabase (PostgreSQL)
-conn = psycopg2.connect(os.getenv("SUPABASE_DB_URL"))
 ```
 
-## Questions de test
+## Test Questions
 
-- Quel est le chiffre d'affaires total par région ?
-- Quels sont les 5 produits les plus vendus ?
-- Quel commercial a le meilleur CA ?
-- Identifie les clients à risque de churn
+- What is the total revenue by region?
+- Which are the top 5 best-selling products?
+- Which sales rep has the best revenue?
+- Identify customers at risk of churn
 
-## Modèles utilisés
+## Models
 
-- `claude-haiku-4-5-20251001` — génération et correction SQL
-- `claude-sonnet-4-6` — analyse insights et commentaire exécutif
+- `claude-haiku-4-5-20251001` — SQL generation and correction
+- `claude-sonnet-4-6` — insights analysis and executive commentary

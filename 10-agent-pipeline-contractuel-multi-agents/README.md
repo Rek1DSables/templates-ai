@@ -1,48 +1,48 @@
-# 10 — Agent Pipeline Contractuel Multi-Agents
+# 10 — Contractual Pipeline Agent (Multi-Agent)
 
-Pipeline multi-agents de traitement contractuel complet. 4 agents spécialisés : extraction et structuration des clauses, analyse des risques juridiques, synthèse avec verdict, génération d'un contrat amélioré ou nouveau. 3 modes : analyse, génération, analyse + amélioration.
+Multi-agent full contractual lifecycle pipeline. 4 specialized agents: clause extraction and structuring, legal risk analysis, synthesis with verdict, improved or new contract generation. 3 modes: analyze, generate, analyze + improve.
 
 ## Stack
 
-- **LangGraph** — orchestration séquentielle 4 agents
-- **Anthropic Claude Sonnet** — synthèse et génération contrat
-- **Anthropic Claude Haiku** — extraction clauses et analyse risques
-- **Supabase** — persistance des contrats traités
-- **PyMuPDF** — extraction texte depuis PDF
-- **FPDF2** — export PDF rapport + contrat
-- **Streamlit** — interface utilisateur
+- **LangGraph** — sequential orchestration 4 agents
+- **Anthropic Claude Sonnet** — synthesis and contract generation
+- **Anthropic Claude Haiku** — clause extraction and risk analysis
+- **Supabase** — processed contracts persistence
+- **PyMuPDF** — text extraction from PDF
+- **FPDF2** — full PDF report + contract export
+- **Streamlit** — user interface
 
-## Architecture des agents
+## Agents
 
-| Agent | Rôle |
+| Agent | Role |
 |-------|------|
-| Agent Extraction | Extrait et structure toutes les clauses contractuelles |
-| Agent Analyse Risques | Identifie risques, clauses abusives, illégalités |
-| Agent Synthèse | Verdict, recommandations, actions avant signature |
-| Agent Génération | Contrat amélioré ou nouveau contrat conforme |
+| Extraction | Extracts and structures all contractual clauses |
+| Risk Analysis | Identifies risks, abusive clauses, illegalities |
+| Synthesis | Verdict, recommendations, actions before signature |
+| Generation | Improved contract or new compliant contract |
 
-## Fonctionnalités
+## Features
 
-- 3 modes : Analyser / Générer / Analyser + Améliorer
-- 8 types de contrats supportés
-- Détection automatique des clauses obligatoires manquantes
-- Matrice des risques par niveau (critique / élevé / moyen / faible)
-- Score de risque global 0-100
-- Détection de clauses abusives et illégalités (ex: délai paiement > 60j LME)
-- Génération de contrat amélioré avec corrections des risques identifiés
-- Upload PDF ou saisie texte
-- Document de démo inclus avec clauses abusives intentionnelles
-- Persistance dans Supabase
-- Export PDF rapport complet + audit trail JSON
-- Retry automatique (3 tentatives, 5s)
+- 3 modes: Analyze / Generate / Analyze + Improve
+- 8 supported contract types
+- Automatic detection of missing mandatory clauses
+- Risk matrix by level (critical / high / medium / low)
+- Global risk score 0-100
+- Detection of abusive clauses and illegalities (payment terms > 60 days, unlimited liability)
+- Automatically generated improved contract with identified risk corrections
+- PDF upload or text input
+- Demo document included with intentional abusive clauses
+- Supabase persistence
+- Full PDF report + JSON audit trail export
+- Retry automatic (3 attempts, 5s)
 
 ## Structure
 
 ```
 10-agent-pipeline-contractuel-multi-agents/
-├── app.py          # Interface Streamlit
+├── app.py          # Streamlit interface
 ├── graph.py        # LangGraph 4 agents
-├── config.py       # Types contrats, clauses obligatoires
+├── config.py       # Contract types, mandatory clauses
 ├── requirements.txt
 ├── .env
 └── README.md
@@ -55,23 +55,23 @@ pip install -r requirements.txt
 streamlit run app.py
 ```
 
-## Variables d'environnement
+## Environment Variables
 
 ```
-ANTHROPIC_API_KEY=ta_clé_ici
-SUPABASE_URL=ton_url_supabase
-SUPABASE_KEY=ta_clé_supabase
+ANTHROPIC_API_KEY=your_key
+SUPABASE_URL=your_supabase_url
+SUPABASE_KEY=your_supabase_key
 ```
 
-## Document de test inclus
+## Test Document
 
-Contrat INNOVATECH-DEVPRO avec 4 anomalies intentionnelles :
-- Délai paiement 90j (illégal — max 60j LME)
-- Responsabilité illimitée du prestataire
-- Résiliation asymétrique (6 mois prestataire vs 0 client)
-- Cession PI des outils propriétaires du prestataire
+INNOVATECH-DEVPRO contract with 4 intentional anomalies:
+- Payment term 90 days (illegal — max 60 days)
+- Unlimited contractor liability
+- Asymmetric termination (6 months contractor vs 0 client)
+- Assignment of contractor's proprietary tools IP
 
-## Modèles utilisés
+## Models
 
-- `claude-haiku-4-5-20251001` — extraction et risques
-- `claude-sonnet-4-6` — synthèse et génération
+- `claude-haiku-4-5-20251001` — extraction and risks
+- `claude-sonnet-4-6` — synthesis and generation

@@ -1,34 +1,46 @@
-# 11 — Agent Due Diligence
+# 08 — M&A Due Diligence Agent
 
-Pipeline d'analyse de due diligence multi-axes. LangGraph orchestre 6 nœuds : analyse par axe, synthèse executive, analyse détaillée, matrice des risques, conditions avant closing, verdict final. Rapport PDF complet.
+Multi-agent due diligence analysis pipeline for M&A, investment and partnership operations. 6 specialized agents: axis analysis, executive synthesis, detailed analysis, risk matrix, pre-closing conditions, final verdict with valuation range.
 
 ## Stack
 
-- **LangGraph** — orchestration séquentielle 6 nœuds
-- **Anthropic Claude Sonnet** — analyse, synthèse et recommandations
-- **FPDF2** — export PDF rapport complet
-- **Streamlit** — interface utilisateur
+- **LangGraph** — sequential orchestration 6 agents
+- **Anthropic Claude Sonnet** — synthesis, recommendations, verdict
+- **Anthropic Claude Haiku** — structural analysis per axis
+- **FPDF2** — full PDF report export
+- **Streamlit** — user interface
 
-## Fonctionnalités
+## Agents
 
-- 5 types de due diligence : M&A, Investissement VC/PE, Partenariat, Fournisseur, Immobilier
-- 7 axes d'analyse configurables : Financier, Juridique, Commercial, Opérationnel, Technologique, RH, Risques
-- Score global 0-100 par axe et global
-- Matrice des risques (critique / élevé / moyen / faible)
-- Conditions suspensives et garanties à obtenir
-- Fourchette de valorisation avec 3 scénarios
-- Verdict Go / No-Go / Go conditionnel avec justification
-- 5 prochaines étapes avec responsable et délai
-- Export PDF rapport complet
-- Retry automatique (3 tentatives, 5s)
+| Agent | Role |
+|-------|------|
+| Axis Analysis | Evaluates each selected axis: score, positives, negatives, risks, key questions |
+| Executive Synthesis | Go/No-Go/Conditional Go verdict, 5 key points, confidence score |
+| Detailed Analysis | Synthesis per axis with strengths and watchpoints |
+| Risk Matrix | Risk ranking by level with impact and mitigation plan |
+| Pre-closing Conditions | Suspensive conditions, valuation adjustments, seller warranties |
+| Final Verdict | Valuation range (low/recommended/high), 5 next steps, blocking points |
+
+## Features
+
+- 5 due diligence types: M&A, VC/PE Investment, Strategic Partnership, Supplier, Commercial Real Estate
+- 7 configurable analysis axes: Financial, Legal, Commercial, Operational, Technology, HR, Risks
+- Global score 0-100 per axis and overall
+- Risk matrix (critical / high / medium / low)
+- Suspensive conditions and warranties auto-generated
+- Valuation range with 3 scenarios
+- Go / No-Go / Conditional Go verdict with justification
+- 5 next steps with owner and deadline
+- Full PDF report export
+- Retry automatic (3 attempts, 5s)
 
 ## Structure
 
 ```
-11-agent-due-diligence/
-├── app.py          # Interface Streamlit
-├── graph.py        # LangGraph 6 nœuds
-├── config.py       # Configuration centralisée
+08-agent-due-diligence/
+├── app.py          # Streamlit interface
+├── graph.py        # LangGraph 6 agents
+├── config.py       # DD types, analysis axes
 ├── requirements.txt
 ├── .env
 └── README.md
@@ -41,21 +53,22 @@ pip install -r requirements.txt
 streamlit run app.py
 ```
 
-## Variables d'environnement
+## Environment Variables
 
 ```
-ANTHROPIC_API_KEY=ta_clé_ici
+ANTHROPIC_API_KEY=your_key
 ```
 
-## Données de test
+## Test Data
 
-- Cible : TechFlow SAS
-- Type : Due Diligence M&A
-- Secteur : SaaS B2B
-- Axes : Financier, Juridique, Commercial
-- Contexte : Acquisition envisagée pour 3M€, MRR 85k€, croissance 60% YoY
+- Target: TechFlow SAS
+- Type: M&A Due Diligence
+- Sector: B2B SaaS
+- Axes: Financial, Legal, Commercial
+- Context: Acquisition considered at €3M, MRR €85k, 60% YoY growth
+- Expected result: Conditional Go, valuation range €1.8M-€3M
 
-## Modèles utilisés
+## Models
 
-- `claude-haiku-4-5-20251001` — analyse structurelle par axe
-- `claude-sonnet-4-6` — synthèse, recommandations, verdict
+- `claude-haiku-4-5-20251001` — structural analysis per axis
+- `claude-sonnet-4-6` — synthesis, recommendations, verdict

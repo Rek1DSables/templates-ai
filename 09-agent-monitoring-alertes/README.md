@@ -1,50 +1,50 @@
-# 09 — Agent Monitoring & Alertes
+# 09 — Monitoring & Alerts Agent
 
-Pipeline multi-agents de monitoring en temps réel. 4 agents spécialisés : détection des violations de seuils, analyse causale et corrélations, génération d'alertes graduées, rapport et notification Gmail. Dashboard avec gauge de santé et alertes par niveau.
+Real-time multi-agent monitoring pipeline. 4 specialized agents: threshold violation detection, causal analysis and correlations, graduated alert generation, report and Gmail notification. Health score dashboard with Plotly gauge.
 
 ## Stack
 
-- **LangGraph** — orchestration séquentielle 4 agents
-- **Anthropic Claude Sonnet** — rapport et analyse causale
-- **Anthropic Claude Haiku** — détection violations et génération alertes
-- **Supabase** — persistance des alertes et métriques
-- **Plotly** — gauge de santé + visualisations
-- **Gmail API** — notification email si alertes critiques
-- **Streamlit** — interface utilisateur
+- **LangGraph** — sequential orchestration 4 agents
+- **Anthropic Claude Sonnet** — report and causal analysis
+- **Anthropic Claude Haiku** — violation detection and alert generation
+- **Supabase** — alert and metrics persistence
+- **Plotly** — health gauge + visualizations
+- **Gmail API** — email notification if critical alerts
+- **Streamlit** — user interface
 
-## Architecture des agents
+## Agents
 
-| Agent | Rôle |
+| Agent | Role |
 |-------|------|
-| Agent Détection | Compare métriques vs seuils, calcule écarts et niveaux |
-| Agent Analyse Causale | Corrélations, cause racine, score de santé 0-100 |
-| Agent Génération Alertes | Alerte structurée par violation, sauvegarde Supabase |
-| Agent Rapport & Notification | Rapport synthétique + envoi Gmail optionnel |
+| Detection | Compares metrics vs thresholds, calculates deviations and levels |
+| Causal Analysis | Correlations, root cause, global health score 0-100 |
+| Alert Generation | Structured alert per violation, Supabase save |
+| Report & Notification | Synthetic report + optional Gmail send |
 
-## Fonctionnalités
+## Features
 
-- 8 métriques pré-configurées (API, conversion, churn, CPU, mémoire, CA, tickets)
-- 4 niveaux d'alerte : critique (SLA 15min) / élevé (60min) / moyen (4h) / info (24h)
-- Score de santé global 0-100 avec gauge Plotly
-- Analyse causale et corrélations entre violations
-- Actions recommandées avec responsable et délai
-- Persistance alertes dans Supabase
-- Notification email Gmail si alertes critiques
-- Mode démo (8 métriques avec violations) ou configuration manuelle
-- Export alertes CSV + rapport JSON complet
-- Retry automatique (3 tentatives, 5s)
+- 8 pre-configured metrics (API, conversion, churn, CPU, memory, revenue, tickets)
+- 4 alert levels: critical (SLA 15min) / high (60min) / medium (4h) / info (24h)
+- Global health score 0-100 with Plotly gauge
+- Causal analysis and correlations between violations
+- Recommended actions with owner and deadline
+- Alert persistence in Supabase
+- Critical alert Gmail notification
+- Demo mode (8 metrics with violations) or manual configuration
+- Alerts CSV + full JSON report export
+- Retry automatic (3 attempts, 5s)
 
 ## Structure
 
 ```
 09-agent-monitoring-alertes/
-├── app.py              # Interface Streamlit + gauge
+├── app.py              # Streamlit interface + gauge
 ├── graph.py            # LangGraph 4 agents
-├── config.py           # Seuils, niveaux alertes, SQL
+├── config.py           # Thresholds, alert levels, SQL
 ├── requirements.txt
 ├── .env
-├── credentials.json    # Gmail OAuth2 (non versionné)
-├── token.json          # Gmail token (non versionné)
+├── credentials.json    # Gmail OAuth2 (not versioned)
+├── token.json          # Gmail token (not versioned)
 └── README.md
 ```
 
@@ -55,28 +55,28 @@ pip install -r requirements.txt
 streamlit run app.py
 ```
 
-## Variables d'environnement
+## Environment Variables
 
 ```
-ANTHROPIC_API_KEY=ta_clé_ici
-SUPABASE_URL=ton_url_supabase
-SUPABASE_KEY=ta_clé_supabase
+ANTHROPIC_API_KEY=your_key
+SUPABASE_URL=your_supabase_url
+SUPABASE_KEY=your_supabase_key
 GMAIL_CREDENTIALS_FILE=credentials.json
 GMAIL_TOKEN_FILE=token.json
 ```
 
-## Données de test
+## Test Data
 
-Mode démo activé par défaut — 8 métriques avec violations intentionnelles :
-- taux_erreur_api : 12.5% (seuil 5%)
-- temps_reponse_ms : 3200ms (seuil 2000ms)
-- taux_conversion : 1.2% (seuil 2%)
-- churn_mensuel : 8.5% (seuil 5%)
-- cpu_usage : 92% (seuil 85%)
-- ca_journalier : 450€ (seuil 1000€)
-- nb_tickets_ouverts : 35 (seuil 20)
+Demo mode activated by default — 8 metrics with intentional violations:
+- error_rate_api: 12.5% (threshold 5%)
+- response_time_ms: 3200ms (threshold 2000ms)
+- conversion_rate: 1.2% (threshold 2%)
+- monthly_churn: 8.5% (threshold 5%)
+- cpu_usage: 92% (threshold 85%)
+- daily_revenue: €450 (threshold €1000)
+- open_tickets: 35 (threshold 20)
 
-## Modèles utilisés
+## Models
 
-- `claude-haiku-4-5-20251001` — détection et alertes
-- `claude-sonnet-4-6` — analyse causale et rapport
+- `claude-haiku-4-5-20251001` — detection and alerts
+- `claude-sonnet-4-6` — causal analysis and report

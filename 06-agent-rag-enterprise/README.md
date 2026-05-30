@@ -1,53 +1,52 @@
-# 06 — Agent RAG Enterprise
+# 06 — Enterprise RAG Agent
 
-Base de connaissance privée avec gouvernance par permissions, retrieval vectoriel, anti-hallucination et audit trail complet. 4 agents spécialisés : indexation avec chunking stratégique, retrieval avec filtrage permissions, génération ancrée dans les sources, vérification anti-hallucination.
+Private knowledge base with permission governance, vector retrieval, anti-hallucination and complete audit trail. 4 specialized agents: strategic chunking indexation, permission-filtered retrieval, source-anchored generation, hallucination verification.
 
 ## Stack
 
-- **LangGraph** — orchestration 4 agents + routeur indexation/interrogation
-- **Anthropic Claude Sonnet** — génération réponse ancrée dans les sources
-- **Anthropic Claude Haiku** — vérification anti-hallucination
-- **Sentence Transformers** — embeddings multilingues (paraphrase-multilingual-MiniLM-L12-v2)
-- **Vector Store in-memory** — remplaçable par Pinecone/Weaviate/Qdrant en production
-- **Streamlit** — interface utilisateur
+- **LangGraph** — 4 agents + indexation/query router
+- **Anthropic Claude Sonnet** — source-anchored response generation
+- **Anthropic Claude Haiku** — anti-hallucination verification
+- **Sentence Transformers** — multilingual embeddings (paraphrase-multilingual-MiniLM-L12-v2)
+- **In-memory Vector Store** — replaceable by Pinecone/Weaviate/Qdrant in production
+- **Streamlit** — user interface
 
-## Architecture des agents
+## Agents
 
-| Agent | Rôle |
+| Agent | Role |
 |-------|------|
-| Agent Indexation | Chunking stratégique + embeddings + registre documents |
-| Agent Retrieval & Gouvernance | Similarité cosinus + filtrage permissions par profil |
-| Agent Génération | Réponse ancrée dans les sources avec citations [SOURCE N] |
-| Agent Anti-Hallucination | Vérifie que la réponse ne contient pas de faits inventés |
+| Indexation | Strategic chunking + embeddings + document registry |
+| Retrieval & Governance | Cosine similarity + permission filtering per profile |
+| Generation | Source-anchored response with [SOURCE N] citations |
+| Anti-Hallucination | Verifies response contains no invented facts |
 
-## Fonctionnalités
+## What Makes This Different From a Basic PDF Chatbot
 
-- 4 niveaux de permission : public / interne / confidentiel / secret
-- 7 profils utilisateur avec permissions configurables
-- Chunks masqués automatiquement selon le profil connecté
-- Citations de sources obligatoires dans chaque réponse
-- Score de confiance basé sur la similarité vectorielle
-- Détection d'hallucination — alerte si fait inventé absent des sources
-- Audit trail complet horodaté (indexation + retrieval + génération)
-- 4 documents de démo inclus (politique remboursement, tarifs, API, onboarding)
-- Ajout de documents custom via interface
-- Export audit trail JSON
-- Retry automatique (3 tentatives, 5s)
+- **Permission governance** — a standard employee doesn't see confidential documents
+- **Anti-hallucination** — every fact verified against sources, alert if invention detected
+- **Mandatory citations** — every claim sourced with [SOURCE N]
+- **Audit trail** — every query timestamped for GDPR / ISO 27001 compliance
 
-## Ce qui différencie ce RAG d'un chatbot PDF basique
+## Features
 
-- **Gouvernance** — un employé ne voit pas les documents confidentiels
-- **Anti-hallucination** — vérifie que la réponse est ancrée dans les sources
-- **Audit trail** — chaque requête tracée pour conformité RGPD/ISO 27001
-- **Production-ready** — remplacer le vector store in-memory par Pinecone/Weaviate en 10 lignes
+- 4 permission levels: public / internal / confidential / secret
+- 7 user profiles with configurable permissions
+- Chunks automatically masked based on connected profile
+- Confidence score based on vector similarity
+- Hallucination detection — alert if invented fact in sources
+- Complete timestamped audit trail
+- 4 demo documents included
+- Custom document addition via interface
+- JSON audit trail export
+- Retry automatic (3 attempts, 5s)
 
 ## Structure
 
 ```
 06-agent-rag-enterprise/
-├── app.py          # Interface Streamlit + sidebar permissions
+├── app.py          # Streamlit interface + permission sidebar
 ├── graph.py        # LangGraph 4 agents + vector store
-├── config.py       # Permissions, chunks, modèles
+├── config.py       # Permissions, chunks, models
 ├── requirements.txt
 ├── .env
 └── README.md
@@ -60,13 +59,13 @@ pip install -r requirements.txt
 streamlit run app.py
 ```
 
-## Variables d'environnement
+## Environment Variables
 
 ```
-ANTHROPIC_API_KEY=ta_clé_ici
+ANTHROPIC_API_KEY=your_key
 ```
 
-## Migration vers vector store production
+## Migrating to Production Vector Store
 
 ```python
 # Pinecone
@@ -74,21 +73,17 @@ import pinecone
 pinecone.init(api_key="...", environment="...")
 index = pinecone.Index("rag-enterprise")
 index.upsert([(chunk_id, embedding, metadata)])
-
-# Weaviate
-import weaviate
-client = weaviate.Client("http://localhost:8080")
 ```
 
-## Questions de test
+## Test Questions
 
-- "Quelle est la politique de remboursement ?" (public — tous profils)
-- "Quel est le prix de l'offre Enterprise ?" (confidentiel — Manager+)
-- "Comment configurer les webhooks API ?" (interne — tous sauf public)
-- "Quelles sont les étapes de l'onboarding ?" (interne — tous)
+- "What is the refund policy?" (public — all profiles)
+- "What is the price of the Enterprise plan?" (confidential — Manager+)
+- "How to configure API webhooks?" (internal — all)
+- "What are the onboarding steps?" (internal — all)
 
-## Modèles utilisés
+## Models
 
-- `claude-haiku-4-5-20251001` — vérification anti-hallucination
-- `claude-sonnet-4-6` — génération réponse
-- `paraphrase-multilingual-MiniLM-L12-v2` — embeddings multilingues
+- `claude-haiku-4-5-20251001` — anti-hallucination verification
+- `claude-sonnet-4-6` — response generation
+- `paraphrase-multilingual-MiniLM-L12-v2` — multilingual embeddings
