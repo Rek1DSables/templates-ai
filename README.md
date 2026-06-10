@@ -12,7 +12,7 @@ AI Automation freelance consultant specializing in the design and deployment of 
 **Available on [Malt](#) and [Upwork](#)** for AI agent development missions, business process automation and Claude API integrations.
 *(Links will be updated once profiles are live)*
 
-📅 **Book a free 30-min discovery call** → [Calendly](#) *(link coming soon)*
+📅 **Book a free 30-min discovery call** → [Book here](https://calendly.com/sharkndwarf/discovery-call-decouverte-ai-agents-15-30-min)
 
 Stack: `LangGraph` · `CrewAI` · `Claude API` · `Supabase` · `Streamlit` · `MCP Protocol`
 
