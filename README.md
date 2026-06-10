@@ -1,8 +1,20 @@
 # AI Automation Templates — Enterprise Portfolio
 
-A collection of 12 production-ready AI agents built with LangGraph and Claude API, targeting high-value business use cases with low competition from no-code tools or generic SaaS solutions.
+> 12 production-ready AI agents built with LangGraph and Claude API.
+> Standalone, documented, and deployable in under an hour.
 
-Each template is standalone, documented, and deployable in under an hour.
+---
+
+## Available for Missions
+
+AI Automation freelance consultant specializing in the design and deployment of custom AI agents for enterprise clients (PME & ETI).
+
+**Available on [Malt](#) and [Upwork](#)** for AI agent development missions, business process automation and Claude API integrations.
+*(Links will be updated once profiles are live)*
+
+📅 **Book a free 30-min discovery call** → [Calendly](#) *(link coming soon)*
+
+Stack: `LangGraph` · `CrewAI` · `Claude API` · `Supabase` · `Streamlit` · `MCP Protocol`
 
 ---
 
@@ -20,20 +32,86 @@ What SaaS and no-code tools don't do: deep SI integration, audit trails for comp
 
 ## Templates
 
-| # | Name | Use Case | Level |
-|---|------|----------|-------|
-| 01 | B2B Workflow Agent | Email → CRM lookup → Classification → Ticket → Reply → Gmail | 🔴 Expert |
-| 02 | EU AI Act Compliance Agent | AI compliance audit — classification, gaps, remediation plan, audit trail | 🔴 Expert |
-| 03 | Finance Close Agent | Multi-agent financial close — reconciliation, variances, journal entries, disclosure | 🔴 Expert |
-| 04 | SDR / Revenue Agent | Enrichment → ICP Scoring → 3-email sequence → Gmail send | 🔴 Expert |
-| 05 | Autonomous Data Analyst Agent | Natural language → SQL → Execution → Insights → Executive summary | 🔴 Expert |
-| 06 | Enterprise RAG Agent | Private knowledge base with governance, permissions, anti-hallucination, audit trail | 🔴 Expert |
-| 07 | Advanced Document Analysis Agent | Structured extraction → Risk verification → Synthesis → Risk matrix → PDF | 🔴 Expert |
-| 08 | M&A Due Diligence Agent | Multi-axis analysis → Scoring → Risk matrix → Verdict → Valuation range | 🔴 Expert |
-| 09 | Monitoring & Alerts Agent | Violation detection → Causal analysis → Graduated alerts → Gmail → Supabase | 🔴 Expert |
-| 10 | Contractual Pipeline Agent | Clause extraction → Risk analysis → Synthesis → Improved contract generation | 🔴 Expert |
-| 11 | LLM Quality Evaluation Agent | Tests → 7-dimension scoring → Regression detection → Deployability badge → Report | 🔴 Expert |
-| 12 | SI Integration & Webhook Agent | Reception → Validation → Mapping → Retry → Dead Letter → Multi-destination | 🔴 Expert |
+### 💰 Sales & Revenue
+| # | Name | Use Case |
+|---|------|----------|
+| 04 | SDR / Revenue Agent | Enrichment → ICP Scoring → 3-email sequence → Gmail send |
+| 01 | B2B Workflow Agent | Email → CRM lookup → Classification → Ticket → Reply → Gmail |
+
+### 📚 Knowledge & Documents
+| # | Name | Use Case |
+|---|------|----------|
+| 06 | Enterprise RAG Agent | Private knowledge base with governance, permissions, anti-hallucination, audit trail |
+| 07 | Advanced Document Analysis Agent | Structured extraction → Risk verification → Synthesis → Risk matrix → PDF |
+| 10 | Contractual Pipeline Agent | Clause extraction → Risk analysis → Synthesis → Improved contract generation |
+
+### 📊 Finance & Risk
+| # | Name | Use Case |
+|---|------|----------|
+| 03 | Finance Close Agent | Multi-agent financial close — reconciliation, variances, journal entries, disclosure |
+| 08 | M&A Due Diligence Agent | Multi-axis analysis → Scoring → Risk matrix → Verdict → Valuation range |
+| 05 | Autonomous Data Analyst Agent | Natural language → SQL → Execution → Insights → Executive summary |
+
+### ⚙️ Governance & Ops
+| # | Name | Use Case |
+|---|------|----------|
+| 02 | EU AI Act Compliance Agent | AI compliance audit — classification, gaps, remediation plan, audit trail |
+| 11 | LLM Quality Evaluation Agent | Tests → 7-dimension scoring → Regression detection → Deployability badge → Report |
+| 09 | Monitoring & Alerts Agent | Violation detection → Causal analysis → Graduated alerts → Gmail → Supabase |
+| 12 | SI Integration & Webhook Agent | Reception → Validation → Mapping → Retry → Dead Letter → Multi-destination |
+
+---
+
+## Packs
+
+| Pack | Agents | Business Value |
+|------|--------|----------------|
+| 💰 Revenue Engine | 04 + 01 + 09 | Full automated commercial pipeline |
+| 📚 Knowledge Hub | 06 + 07 + 10 | Documents turned into intelligent assets |
+| 📊 Finance & Risk | 03 + 08 + 05 | Automated critical financial processes |
+| ⚙️ AI Governance & Ops | 02 + 11 + 09 + 12 | Compliant, connected, monitored AI agents |
+
+---
+
+## Typical Client Pipelines
+
+**Full B2B commercial pipeline**
+```
+04 — SDR Revenue → 01 — B2B Workflow → 10 — Contractual Pipeline
+```
+Prospect enrichment → lead qualification → email handling → contract generation
+
+---
+
+**AI compliance pipeline (August 2026 deadline)**
+```
+02 — EU AI Act Compliance → 11 — LLM Quality Evaluation
+```
+Audit AI systems → validate quality before deployment
+
+---
+
+**M&A / investment pipeline**
+```
+07 — Document Analysis → 08 — Due Diligence → 10 — Contractual Pipeline
+```
+Analyze documents → due diligence → generate agreements
+
+---
+
+**Enterprise finance pipeline**
+```
+05 — Data Analyst → 03 — Finance Close → 09 — Monitoring
+```
+Analyze data → close books → monitor continuously
+
+---
+
+**SI & data pipeline**
+```
+12 — SI Integration → 06 — RAG Enterprise → 05 — Data Analyst
+```
+Ingest events → enrich knowledge base → analyze
 
 ---
 
@@ -114,49 +192,7 @@ Monthly estimates with Anthropic Claude Haiku + Sonnet (default provider):
 
 *Light: a few uses/day. Medium: regular team usage. Heavy: high-volume production.*
 
-With DeepSeek: divide by 8 to 10. With Mistral Small: divide by 3.
-
----
-
-## Typical Client Pipelines
-
-**Full B2B commercial pipeline**
-```
-04 — SDR Revenue → 01 — B2B Workflow → 10 — Contractual Pipeline
-```
-Prospect enrichment → lead qualification → email handling → contract generation
-
----
-
-**AI compliance pipeline (August 2026 deadline)**
-```
-02 — EU AI Act Compliance → 11 — LLM Quality Evaluation
-```
-Audit AI systems → validate quality before deployment
-
----
-
-**M&A / investment pipeline**
-```
-07 — Document Analysis → 08 — Due Diligence → 10 — Contractual Pipeline
-```
-Analyze documents → due diligence → generate agreements
-
----
-
-**Enterprise finance pipeline**
-```
-05 — Data Analyst → 03 — Finance Close → 09 — Monitoring
-```
-Analyze data → close books → monitor continuously
-
----
-
-**SI & data pipeline**
-```
-12 — SI Integration → 06 — RAG Enterprise → 05 — Data Analyst
-```
-Ingest events → enrich knowledge base → analyze
+*With DeepSeek: divide by 8 to 10. With Mistral Small: divide by 3.*
 
 ---
 
@@ -206,16 +242,6 @@ Each template includes a `.env` file to configure and a `README.md` with complet
 - Supabase account (templates with persistence)
 - Gmail account + OAuth2 credentials (email templates)
 - Serper API key (SDR template with web enrichment)
-
----
-
-## Available for Missions
-
-AI Automation freelance consultant specializing in the design and deployment of custom AI agents for enterprise clients.
-
-**Available on Malt and Upwork** for AI agent development missions, business process automation and Claude API integrations.
-
-Stack: LangGraph · Claude API · MCP Protocol · Supabase · Streamlit · Multi-agent architectures
 
 ---
 
