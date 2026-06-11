@@ -14,7 +14,7 @@ AI Automation freelance consultant specializing in the design and deployment of 
 
 🌐 **Website** → [stephane-bomin.fr](https://stephane-bomin.fr)
 
-📅 **Book a free 30-min discovery call** → [Book here](https://calendly.com/sharkndwarf/discovery-call-decouverte-ai-agents-15-30-min)
+📅 **Book a free 30-min discovery call** → [Book here](https://calendly.com/stephane-bomin/discovery-call-decouverte-ai-agents-15-30-min)
 
 Stack: `LangGraph` · `CrewAI` · `Claude API` · `Supabase` · `Streamlit` · `MCP Protocol`
 
