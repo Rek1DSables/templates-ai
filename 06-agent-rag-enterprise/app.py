@@ -153,7 +153,7 @@ with st.sidebar:
 
     st.divider()
     st.markdown(f"**Documents indexés :** {len(DOCUMENT_REGISTRY)}")
-    st.markdown(f"**Chunks en mémoire :** {len(VECTOR_STORE)}")
+    st.markdown(f"**Fragments en mémoire :** {len(VECTOR_STORE)}")
 
 st.divider()
 
@@ -166,7 +166,7 @@ with tab_index:
     source_docs = st.radio("Source", ["Documents de démo", "Ajouter un document"], horizontal=True)
 
     if source_docs == "Documents de démo":
-        st.info(f"4 documents de démo prêts à indexer (Public, Confidentiel, Interne x2)")
+        st.info("4 documents de démo prêts à indexer (Public, Confidentiel, Interne x2)")
         for doc in DOCUMENTS_DEMO:
             perm = doc["permission"]
             icone = "🟢" if perm == "public" else "🟡" if perm == "interne" else "🟠"
@@ -197,9 +197,9 @@ with tab_index:
             if result["erreur"]:
                 st.error(result["erreur"])
             else:
-                st.success(f"✅ {len(result['documents_indexes'])} documents indexés — {len(VECTOR_STORE)} chunks en mémoire")
+                st.success(f"✅ {len(result['documents_indexes'])} documents indexés — {len(VECTOR_STORE)} fragments en mémoire")
                 for doc in result["documents_indexes"]:
-                    st.markdown(f"- **{doc['nom']}** — {doc['nb_chunks']} chunks — {doc['permission'].capitalize()}")
+                    st.markdown(f"- **{doc['nom']}** — {doc['nb_chunks']} fragments — {doc['permission'].capitalize()}")
 
     else:
         nom = st.text_input("Nom du document", placeholder="Manuel utilisateur v3")
@@ -236,7 +236,7 @@ with tab_index:
                 if result["erreur"]:
                     st.error(result["erreur"])
                 else:
-                    st.success(f"✅ Document indexé — {len(VECTOR_STORE)} chunks total")
+                    st.success(f"✅ Document indexé — {len(VECTOR_STORE)} fragments total")
 
 with tab_query:
     st.subheader("Interroger la base de connaissance")
@@ -255,6 +255,7 @@ with tab_query:
             "Comment configurer les webhooks API ?",
             "Quelles sont les étapes de l'onboarding client ?",
             "Quel est l'objectif de CA au Q4 2026 ?",
+            "Quelle est la procédure de recrutement pour un poste de directeur financier ?",
         ]
         exemple = st.selectbox("Exemples de questions", [""] + exemples)
         if exemple and not question:
@@ -298,7 +299,7 @@ with tab_query:
             col1, col2, col3 = st.columns(3)
             col1.metric("Confiance", f"{icone_confiance} {score:.0%}")
             col2.metric("Sources utilisées", len(result["sources_citees"]))
-            col3.metric("Chunks analysés", len(result["chunks_retrouves"]))
+            col3.metric("fragments analysés", len(result["chunks_retrouves"]))
 
             st.divider()
 
@@ -318,7 +319,9 @@ with tab_query:
             # Audit trail
             with st.expander("📋 Audit Trail"):
                 for entry in result["audit_log"]:
-                    st.markdown(f"✅ `{entry.get('timestamp')}` **{entry.get('agent')}** — {entry.get('etape')} {('| ' + entry.get('detail', '')) if entry.get('detail') else ''}")
+                    detail = entry.get("detail", "")
+                    suffix = f" | {detail}" if detail else ""
+                    st.markdown(f"✅ `{entry.get('timestamp')}` **{entry.get('agent')}** — {entry.get('etape')}{suffix}")
 
                 st.download_button(
                     label="📦 Télécharger Audit Trail JSON",
