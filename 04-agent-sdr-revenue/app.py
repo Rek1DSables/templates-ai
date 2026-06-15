@@ -14,16 +14,22 @@ PROSPECTS_DEMO = [
     {"prenom": "Lucas", "nom": "Moreau", "email": "l.moreau@consult-ai.fr", "entreprise": "ConsultAI", "poste": "CEO / Directeur Général", "secteur": "Conseil / ESN", "taille_entreprise": "PME (10-250 salariés)", "site_web": "consult-ai.fr", "linkedin": "linkedin.com/in/lucasmoreau"},
 ]
 
+SEGMENT_LABELS = {
+    "hot":  ("Prioritaire",    "🔴"),
+    "warm": ("Haute priorité", "🟠"),
+    "cold": ("Basse priorité", "🟢"),
+}
+
 st.set_page_config(page_title="Agent SDR / Revenue", page_icon="🎯", layout="centered")
 st.title("🎯 Agent SDR / Revenue")
-st.caption("Pipeline multi-agents : Enrichissement → Scoring ICP → Séquence personnalisée → Envoi Gmail")
+st.caption("Pipeline multi-agents : Enrichissement → Scoring → Séquence personnalisée → Envoi Gmail")
 
 with st.expander("📋 Architecture du pipeline"):
     st.markdown("""
 **4 agents spécialisés en séquence :**
 1. **Agent Enrichissement** — recherche web (Serper) + qualification IA par prospect
-2. **Agent Scoring** — score ICP 0-100, segmentation hot/warm/cold, sauvegarde Supabase
-3. **Agent Séquence** — génère 3 emails personnalisés par prospect (hot + warm uniquement)
+2. **Agent Scoring** — score 0-100, segmentation Prioritaire / Haute priorité / Basse priorité, sauvegarde Supabase
+3. **Agent Séquence** — génère 3 emails personnalisés par prospect (Prioritaire + Haute priorité uniquement)
 4. **Agent Envoi** — envoie le premier email via Gmail (optionnel)
     """)
 
@@ -31,7 +37,7 @@ with st.expander("🗄️ Setup Supabase"):
     st.code(SQL_SETUP, language="sql")
 
 st.divider()
-st.subheader("Configuration ICP & Campagne")
+st.subheader("Configuration de votre client idéal & Campagne")
 
 col1, col2 = st.columns(2)
 with col1:
@@ -83,13 +89,13 @@ envoyer = st.toggle("Envoyer le premier email via Gmail", value=False)
 if envoyer:
     st.warning("⚠️ Les emails seront envoyés réellement depuis ta boîte Gmail.")
 
-if st.button("Lancer le pipeline SDR", use_container_width=True):
+if st.button("Lancer le pipeline", use_container_width=True):
     if not prospects:
         st.error("Merci de fournir des prospects.")
     elif not expediteur_nom or not produit_contexte:
         st.error("Merci de renseigner votre nom et le contexte produit.")
     else:
-        with st.spinner(f"Pipeline SDR en cours — {len(prospects)} prospects..."):
+        with st.spinner(f"Pipeline en cours — {len(prospects)} prospects..."):
             try:
                 graph = build_graph()
                 result = graph.invoke({
@@ -119,14 +125,14 @@ if st.button("Lancer le pipeline SDR", use_container_width=True):
         stats = result["stats"]
         col1, col2, col3, col4 = st.columns(4)
         col1.metric("Total", stats.get("total", 0))
-        col2.metric("🔴 Hot", stats.get("hot", 0))
-        col3.metric("🟠 Warm", stats.get("warm", 0))
+        col2.metric("🔴 Prioritaire", stats.get("hot", 0))
+        col3.metric("🟠 Haute priorité", stats.get("warm", 0))
         col4.metric("Score moyen", f"{stats.get('score_moyen', 0)}/100")
 
         st.divider()
 
         tab1, tab2, tab3, tab4 = st.tabs([
-            "Scoring ICP",
+            "Scoring prospects",
             "Séquences emails",
             "Audit Trail",
             "Export",
@@ -138,27 +144,27 @@ if st.button("Lancer le pipeline SDR", use_container_width=True):
                 rows = []
                 for p in qualifies:
                     seg = p.get("segment", "cold")
-                    icone = "🔴" if seg == "hot" else "🟠" if seg == "warm" else "🟢"
+                    label, icone = SEGMENT_LABELS.get(seg, ("Basse priorité", "🟢"))
                     rows.append({
                         "Prospect": f"{p.get('prenom', '')} {p.get('nom', '')}",
                         "Entreprise": p.get("entreprise", ""),
                         "Poste": p.get("poste", ""),
-                        "Score ICP": p.get("score_icp", 0),
-                        "Segment": f"{icone} {seg.upper()}",
+                        "Score": p.get("score_icp", 0),
+                        "Priorité": f"{icone} {label}",
                     })
                 df_scores = pd.DataFrame(rows)
                 st.dataframe(df_scores, use_container_width=True, hide_index=True)
 
-                fig = px.bar(df_scores, x="Prospect", y="Score ICP",
-                    color="Score ICP", color_continuous_scale="RdYlGn",
-                    title="Scores ICP par prospect")
+                fig = px.bar(df_scores, x="Prospect", y="Score",
+                    color="Score", color_continuous_scale="RdYlGn",
+                    title="Score de correspondance par prospect")
                 st.plotly_chart(fig, use_container_width=True)
 
                 st.divider()
                 for p in qualifies:
                     seg = p.get("segment", "cold")
-                    icone = "🔴" if seg == "hot" else "🟠" if seg == "warm" else "🟢"
-                    with st.expander(f"{icone} {p.get('prenom', '')} {p.get('nom', '')} — {p.get('entreprise', '')} — {p.get('score_icp', 0)}/100"):
+                    label, icone = SEGMENT_LABELS.get(seg, ("Basse priorité", "🟢"))
+                    with st.expander(f"{icone} {p.get('prenom', '')} {p.get('nom', '')} — {p.get('entreprise', '')} — {p.get('score_icp', 0)}/100 — {label}"):
                         st.markdown(f"**Résumé :** {p.get('resume_enrichi', '')}")
                         st.markdown(f"**Angle d'approche :** {p.get('angle_approche', '')}")
                         st.markdown(f"**Objection probable :** {p.get('objection_probable', '')}")
@@ -170,23 +176,25 @@ if st.button("Lancer le pipeline SDR", use_container_width=True):
         with tab2:
             sequences = result["sequences_generees"]
             if not sequences:
-                st.info("Aucune séquence générée — tous les prospects sont classés cold.")
+                st.info("Aucune séquence générée — tous les prospects sont classés en basse priorité.")
             for seq in sequences:
                 prospect = seq["prospect"]
                 emails = seq["emails"]
                 seg = prospect.get("segment", "cold")
-                icone = "🔴" if seg == "hot" else "🟠"
-                with st.expander(f"{icone} {prospect.get('prenom', '')} {prospect.get('nom', '')} — {prospect.get('entreprise', '')}"):
-                    for key, label in [("email_1", "Email 1 — Premier contact"), ("email_2", "Email 2 — Relance J+5"), ("email_3", "Email 3 — Breakup J+12")]:
+                label, icone = SEGMENT_LABELS.get(seg, ("Basse priorité", "🟢"))
+                with st.expander(f"{icone} {prospect.get('prenom', '')} {prospect.get('nom', '')} — {prospect.get('entreprise', '')} — {label}"):
+                    for key, lbl in [("email_1", "Email 1 — Premier contact"), ("email_2", "Email 2 — Relance J+5"), ("email_3", "Email 3 — Breakup J+12")]:
                         email_data = emails.get(key, {})
-                        st.markdown(f"**{label}**")
+                        st.markdown(f"**{lbl}**")
                         st.markdown(f"Objet : `{email_data.get('sujet', '')}`")
                         st.text_area("", value=email_data.get("corps", ""), height=120, key=f"{prospect.get('email', '')}_{key}")
                         st.divider()
 
         with tab3:
             for entry in result["audit_log"]:
-                st.markdown(f"✅ `{entry.get('timestamp')}` **{entry.get('agent')}** — {entry.get('etape')} {('| ' + entry.get('detail', '')) if entry.get('detail') else ''}")
+                detail = entry.get("detail", "")
+                suffix = f" | {detail}" if detail else ""
+                st.markdown(f"✅ `{entry.get('timestamp')}` **{entry.get('agent')}** — {entry.get('etape')}{suffix}")
 
         with tab4:
             col_a, col_b = st.columns(2)

@@ -18,6 +18,14 @@ AI Automation freelance consultant specializing in the design and deployment of 
 
 Stack: `LangGraph` · `CrewAI` · `Claude API` · `Supabase` · `Streamlit` · `MCP Protocol`
 
+## Demo Videos
+
+| Agent | Demo |
+|-------|------|
+| 🧬 Enterprise RAG Agent | [▶ Watch demo](https://youtu.be/IS6aD-x5gS0) |
+| 🎯 Prospection Commerciale B2B | [▶ Watch demo](https://youtu.be/NgQ0goRF_lU) |
+| 📊 Agent Finance Close | [▶ Watch demo](https://youtu.be/eq0j_WNtCMM) |
+| 🔔 Agent Monitoring & Alertes | [▶ Watch demo](https://youtu.be/Cj2olfG2YII) |
 ---
 
 ## Why This Collection
