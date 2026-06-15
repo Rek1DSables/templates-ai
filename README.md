@@ -9,8 +9,7 @@
 
 AI Automation freelance consultant specializing in the design and deployment of custom AI agents for enterprise clients (PME & ETI).
 
-**Available on [Malt](#) and [Upwork](#)** for AI agent development missions, business process automation and Claude API integrations.
-*(Links will be updated once profiles are live)*
+***Available on [Malt](https://www.malt.fr/profile/stephanebomin) and [Upwork](https://www.upwork.com/freelancers/~01865ed28acbcf7353)** for AI agent development missions, business process automation and Claude API integrations.*
 
 🌐 **Website** → [stephane-bomin.fr](https://stephane-bomin.fr)
 
